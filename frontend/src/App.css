@@ -1,0 +1,29 @@
+/* Estilos principais da aplicação Mundo em Palavras */
+/* Design responsivo e moderno para e-commerce de livros */
+/* Implementa RNF3.2 para responsividade e RNF3.4 para consistência visual */
+
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  padding: 20px;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+.App-header h1 {
+  margin: 0 0 10px 0;
+  color: #61dafb;
+}
+
+.App-header p {
+  margin: 0;
+  font-size: 1.2rem;
+}

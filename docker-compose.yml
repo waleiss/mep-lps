@@ -1,0 +1,297 @@
+# Docker Compose para Mundo em Palavras - Sistema de Microserviços
+# Orquestração completa de todos os serviços e bancos de dados
+# Implementa arquitetura de microserviços conforme diagrama
+
+services:
+  # ===========================================
+  # BANCOS DE DADOS
+  # ===========================================
+  
+  # PostgreSQL - Usuários
+  postgres-users:
+    image: postgres:15-alpine
+    container_name: mundo-palavras-postgres-users
+    environment:
+      POSTGRES_DB: mundo_palavras_users
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/data/postgres_users:/var/lib/postgresql/data
+      - ./backend/databases/postgres_users/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # PostgreSQL - Catálogo
+  postgres-catalog:
+    image: postgres:15-alpine
+    container_name: mundo-palavras-postgres-catalog
+    environment:
+      POSTGRES_DB: mundo_palavras_catalog
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./backend/data/postgres_catalog:/var/lib/postgresql/data
+      - ./backend/databases/postgres_catalog/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # PostgreSQL - Carrinho
+  postgres-cart:
+    image: postgres:15-alpine
+    container_name: mundo-palavras-postgres-cart
+    environment:
+      POSTGRES_DB: mundo_palavras_cart
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./backend/data/postgres_cart:/var/lib/postgresql/data
+      - ./backend/databases/postgres_cart/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # PostgreSQL - Pedidos
+  postgres-orders:
+    image: postgres:15-alpine
+    container_name: mundo-palavras-postgres-orders
+    environment:
+      POSTGRES_DB: mundo_palavras_orders
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5435:5432"
+    volumes:
+      - ./backend/data/postgres_orders:/var/lib/postgresql/data
+      - ./backend/databases/postgres_orders/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # PostgreSQL - Pagamentos
+  postgres-payments:
+    image: postgres:15-alpine
+    container_name: mundo-palavras-postgres-payments
+    environment:
+      POSTGRES_DB: mundo_palavras_payments
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - "5436:5432"
+    volumes:
+      - ./backend/data/postgres_payments:/var/lib/postgresql/data
+      - ./backend/databases/postgres_payments/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: mundo-palavras-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./backend/data/redis:/data
+      - ./backend/databases/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # ===========================================
+  # MICROSERVIÇOS FASTAPI
+  # ===========================================
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/microservices/auth_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-auth-service
+    environment:
+      - DATABASE_URL=postgresql://admin:admin1234@postgres-users:5432/mundo_palavras_users
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-in-production
+      - JWT_ALGORITHM=HS256
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres-users
+      - redis
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Catalog Service
+  catalog-service:
+    build:
+      context: ./backend/microservices/catalog_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-catalog-service
+    environment:
+      - DATABASE_URL=postgresql://admin:admin1234@postgres-catalog:5432/mundo_palavras_catalog
+      - REDIS_URL=redis://redis:6379/1
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres-catalog
+      - redis
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Cart Service
+  cart-service:
+    build:
+      context: ./backend/microservices/cart_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-cart-service
+    environment:
+      - DATABASE_URL=postgresql://admin:admin1234@postgres-cart:5432/mundo_palavras_cart
+      - REDIS_URL=redis://redis:6379/2
+    ports:
+      - "8003:8003"
+    depends_on:
+      - postgres-cart
+      - redis
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Shipping Service
+  shipping-service:
+    build:
+      context: ./backend/microservices/shipping_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-shipping-service
+    environment:
+      - CORREIOS_API_URL=https://api.correios.com.br
+      - CORREIOS_API_KEY=your-correios-api-key
+    ports:
+      - "8004:8004"
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./backend/microservices/payment_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-payment-service
+    environment:
+      - DATABASE_URL=postgresql://admin:admin1234@postgres-payments:5432/mundo_palavras_payments
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+      - PAYMENT_GATEWAY_URL=https://api.payment-gateway.com
+    ports:
+      - "8005:8005"
+    depends_on:
+      - postgres-payments
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Order Service
+  order-service:
+    build:
+      context: ./backend/microservices/order_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-order-service
+    environment:
+      - DATABASE_URL=postgresql://admin:admin1234@postgres-orders:5432/mundo_palavras_orders
+      - REDIS_URL=redis://redis:6379/3
+    ports:
+      - "8006:8006"
+    depends_on:
+      - postgres-orders
+      - redis
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # Recommendation Service
+  recommendation-service:
+    build:
+      context: ./backend/microservices/recommendation_service
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-recommendation-service
+    environment:
+      - REDIS_URL=redis://redis:6379/4
+    ports:
+      - "8007:8007"
+    depends_on:
+      - redis
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # ===========================================
+  # API GATEWAY
+  # ===========================================
+
+  # Nginx API Gateway
+  api-gateway:
+    image: nginx:alpine
+    container_name: mundo-palavras-api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend/api_gateway/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - auth-service
+      - catalog-service
+      - cart-service
+      - shipping-service
+      - payment-service
+      - order-service
+      - recommendation-service
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+  # ===========================================
+  # FRONTEND
+  # ===========================================
+
+  # ReactJS Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mundo-palavras-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+      - REACT_APP_AUTH_SERVICE_URL=http://localhost:8001
+      - REACT_APP_CATALOG_SERVICE_URL=http://localhost:8002
+      - REACT_APP_CART_SERVICE_URL=http://localhost:8003
+    depends_on:
+      - api-gateway
+    networks:
+      - mundo-palavras-network
+    restart: unless-stopped
+
+# ===========================================
+# VOLUMES
+# ===========================================
+# Usando bind mounts para persistência de dados
+# Os dados são armazenados em ./backend/data/
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  mundo-palavras-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

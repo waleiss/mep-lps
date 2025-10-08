@@ -1,0 +1,3 @@
+-- Banco de Dados 1 - Usuários
+-- Tabelas: usuarios, enderecos, perfis
+-- Implementa RF1.1, RF1.2, RF1.3, RF1.4

@@ -1,0 +1,3 @@
+-- Banco de Dados 5 - Pagamentos
+-- Tabelas: pagamentos, transacoes, formas_pagamento
+-- Implementa RF4.3 e RNF2.1, RNF2.2 para segurança

@@ -1,0 +1,3 @@
+-- Banco de Dados 4 - Pedidos
+-- Tabelas: pedidos, itens_pedido, status_pedido
+-- Implementa RF4.4, RF4.5, RF4.6
