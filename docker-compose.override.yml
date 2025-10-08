@@ -1,0 +1,84 @@
+# Docker Compose Override para Desenvolvimento
+# Configurações específicas para ambiente de desenvolvimento
+# Hot reload e debug habilitados
+
+services:
+  # ===========================================
+  # MICROSERVIÇOS COM HOT RELOAD
+  # ===========================================
+
+  auth-service:
+    volumes:
+      - ./backend/microservices/auth_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  catalog-service:
+    volumes:
+      - ./backend/microservices/catalog_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  cart-service:
+    volumes:
+      - ./backend/microservices/cart_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8003 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  shipping-service:
+    volumes:
+      - ./backend/microservices/shipping_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8004 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  payment-service:
+    volumes:
+      - ./backend/microservices/payment_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8005 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  order-service:
+    volumes:
+      - ./backend/microservices/order_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8006 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  recommendation-service:
+    volumes:
+      - ./backend/microservices/recommendation_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8007 --reload
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+
+  # ===========================================
+  # FRONTEND COM HOT RELOAD
+  # ===========================================
+
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+
+  # ===========================================
+  # BANCOS COM DADOS PERSISTENTES
+  # ===========================================
+
+  # Os bancos de dados agora usam volumes nomeados do docker-compose.yml principal
+  # Não há necessidade de override para volumes de dados

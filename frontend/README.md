@@ -1,87 +1,103 @@
-# Welcome to React Router!
+# Frontend - Mundo em Palavras
 
-A modern, production-ready template for building full-stack React applications using React Router.
+## Visão Geral
+O frontend do sistema "Mundo em Palavras" é uma aplicação ReactJS responsiva que fornece uma interface intuitiva para o e-commerce de livros.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Tecnologias
+- **Framework**: ReactJS
+- **Build Tool**: Vite
+- **Roteamento**: React Router DOM
+- **HTTP Client**: Axios
+- **Styling**: CSS3 responsivo
+- **Containerização**: Docker
 
-## Features
+## Funcionalidades Implementadas
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+### 1. Autenticação (RF1)
+- **Login/Cadastro**: Formulários responsivos com validação
+- **Recuperação de Senha**: Envio de link por email
+- **Perfil do Usuário**: Edição de informações pessoais
+- **Segurança**: Comunicação HTTPS com backend
 
-## Getting Started
+### 2. Catálogo de Livros (RF2)
+- **Exibição**: Lista responsiva de livros com paginação
+- **Busca**: Busca por título, autor, ISBN ou palavra-chave
+- **Filtros**: Filtros por gênero, preço e condição
+- **Detalhes**: Página completa com informações do livro
+- **Ordenação**: Ordenação por relevância, preço e título
 
-### Installation
+### 3. Carrinho de Compras (RF3)
+- **Adicionar Itens**: Botão em cada livro do catálogo
+- **Visualização**: Lista de itens com subtotal e frete
+- **Gerenciamento**: Remover itens e alterar quantidades
+- **Cálculos**: Total automático da compra
 
-Install the dependencies:
+### 4. Checkout (RF4)
+- **Frete**: Cálculo automático por CEP
+- **Endereços**: Seleção ou cadastro de endereços
+- **Pagamento**: Múltiplas formas (PIX, Cartão, Boleto)
+- **Confirmação**: Tela de confirmação com número do pedido
+- **Histórico**: Visualização de pedidos anteriores
 
-```bash
-npm install
+### 5. Recomendações (RF5)
+- **Livros Relacionados**: Baseado em autor e gênero
+- **Mais Vendidos**: Lista de livros populares
+- **Novidades**: Lançamentos recentes
+
+## Características de Usabilidade (RNF3)
+
+### Design Responsivo
+- **Desktop**: Layout otimizado para telas grandes
+- **Tablet**: Adaptação para telas médias
+- **Mobile**: Interface touch-friendly
+
+### Performance
+- **Carregamento**: Páginas carregam em menos de 3s
+- **Busca**: Resultados em menos de 1s
+- **Cache**: Dados em cache para melhor performance
+
+### Experiência do Usuário
+- **Navegação**: Interface intuitiva e clara
+- **Mensagens**: Feedback claro para ações do usuário
+- **Consistência**: Layout uniforme em todas as páginas
+
+## Estrutura do Projeto
+```
+frontend/
+├── src/
+│   ├── components/     # Componentes reutilizáveis
+│   ├── pages/         # Páginas da aplicação
+│   ├── services/      # Comunicação com API
+│   └── App.jsx        # Componente principal
+├── public/            # Arquivos estáticos
+├── package.json       # Dependências
+└── Dockerfile         # Containerização
 ```
 
-### Development
+## Como Executar
 
-Start the development server with HMR:
-
+### Desenvolvimento
 ```bash
+npm install
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
+### Produção
 ```bash
 npm run build
+npm run preview
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
+### Docker
 ```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+docker build -t mundo-em-palavras-frontend .
+docker run -p 3000:3000 mundo-em-palavras-frontend
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
+## Integração com Backend
+O frontend se comunica com os microserviços através do API Gateway (porta 8080), que roteia as requisições para os serviços apropriados.
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+## Responsividade
+- **Mobile First**: Design otimizado para dispositivos móveis
+- **Breakpoints**: Adaptação para diferentes tamanhos de tela
+- **Touch**: Interface otimizada para toque
