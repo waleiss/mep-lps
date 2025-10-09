@@ -1,6 +1,6 @@
-# Configuração do banco de dados PostgreSQL para pagamentos
-# Conexão com Banco de Dados 5 Pagamentos
-# Implementa RNF2.1, RNF2.2 para segurança
+# Configuração do banco de dados PostgreSQL para frete
+# Conexão com Banco de Dados 6 Frete
+# Implementa RNF1.1 para performance
 
 import os
 from sqlalchemy import create_engine
@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 # Configuração do banco de dados
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://admin:admin1234@localhost:5436/mundo_palavras_payments"
+    "postgresql://admin:admin1234@localhost:5437/mundo_palavras_shipping"
 )
 
 # Criar engine do SQLAlchemy
