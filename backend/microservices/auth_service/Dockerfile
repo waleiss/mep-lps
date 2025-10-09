@@ -20,6 +20,9 @@ RUN pip install --no-cache-dir -e .
 # Copiar código fonte
 COPY . .
 
+# Reinstalar dependências para garantir que tudo está atualizado
+RUN pip install --no-cache-dir -e .
+
 # Expor porta
 EXPOSE 8001
 

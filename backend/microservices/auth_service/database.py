@@ -1,41 +1,46 @@
-# Configuração do banco de dados PostgreSQL para usuários
-# Conexão com Banco de Dados 1 Usuários
-# Implementa RNF2.1 para criptografia de senhas
+# Database Configuration - PostgreSQL connection for users
+# Implements RNF2.1 for password encryption
+# Uses clean configuration management
 
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Configuração do banco de dados
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://admin:admin1234@localhost:5432/mundo_palavras_users"
-)
+from config import settings
 
-# Criar engine do SQLAlchemy
+# Create SQLAlchemy engine
 engine = create_engine(
-    DATABASE_URL,
+    settings.database_url,
     poolclass=StaticPool,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
+    echo=settings.debug  # Enable SQL logging in debug mode
 )
 
-# Criar sessão do banco
+# Create database session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base para os modelos
+# Base for models
 Base = declarative_base()
 
-# Função para obter sessão do banco
+
 def get_db():
+    """
+    Dependency to get database session
+    
+    Yields:
+        Database session
+    """
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-# Função para criar tabelas
+
 def create_tables():
-    from .models import Base
+    """
+    Create all database tables
+    """
+    from models import Base
     Base.metadata.create_all(bind=engine)
