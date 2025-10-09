@@ -181,17 +181,6 @@ backend/
 ├── seed_all_services.py       # Script principal de seed
 └── DATABASE_MODELING.md       # Este arquivo
 ```
-
-## Próximos Passos
-
-1. **Configurar variáveis de ambiente** para as URLs dos bancos de dados
-2. **Executar migrations** em cada microserviço
-3. **Popular dados de exemplo** usando os scripts de seed
-4. **Implementar APIs REST** para cada microserviço
-5. **Configurar comunicação** entre microserviços
-6. **Implementar autenticação** e autorização
-7. **Adicionar testes** para os modelos e relacionamentos
-
 ## Considerações Técnicas
 
 - **Isolamento de dados**: Cada microserviço possui seu próprio banco
