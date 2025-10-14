@@ -18,22 +18,22 @@ async def lifespan(app: FastAPI):
     # Startup
     create_tables()
     print("=" * 60)
-    print("🚚 Shipping Service started successfully!")
-    print(f"📍 API Docs: http://localhost:8004{settings.docs_url}")
-    print(f"📦 Version: 2.0.0")
-    print(f"🌍 Environment: {settings.environment}")
+    print("Shipping Service started successfully!")
+    print(f"API Docs: http://localhost:8004{settings.docs_url}")
+    print(f"Version: 2.0.0")
+    print(f"Environment: {settings.environment}")
     print("=" * 60)
-    print("\n✅ Features disponíveis:")
-    print("  - Cálculo de frete (R$ 15,00/10 dias ou Grátis/20 dias)")
-    print("  - Gerenciamento de endereços de usuários")
-    print("  - Validação de CEP via ViaCEP")
-    print("  - CRUD completo de endereços")
+    print("\nFeatures disponiveis:")
+    print("  - Calculo de frete (R$ 15,00/10 dias ou Gratis/20 dias)")
+    print("  - Gerenciamento de enderecos de usuarios")
+    print("  - Validacao de CEP via ViaCEP")
+    print("  - CRUD completo de enderecos")
     print("=" * 60)
     
     yield
     
     # Shutdown
-    print("\n🛑 Shipping Service shutting down...")
+    print("\nShipping Service shutting down...")
 
 
 # Create FastAPI application

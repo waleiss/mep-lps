@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "payment-service"
-version = "1.0.0"
+version = "2.0.0"
 description = "Microserviço de Pagamento - Mundo em Palavras"
 authors = [{name = "Mundo em Palavras Team"}]
 readme = "README.md"
@@ -14,12 +14,11 @@ dependencies = [
     "uvicorn[standard]>=0.24.0",
     "sqlalchemy>=2.0.0",
     "psycopg2-binary>=2.9.0",
-    "requests>=2.31.0",
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
     "python-multipart>=0.0.6",
     "python-dotenv>=1.0.0",
-    "cryptography>=41.0.0",
-    "stripe>=7.0.0"
+    "cryptography>=41.0.0"
 ]
 
 [project.optional-dependencies]
