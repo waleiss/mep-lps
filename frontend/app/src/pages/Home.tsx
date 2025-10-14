@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { listBooks } from "../services/api";
 import type { Book } from "../types/book";
-import BookCard from "../components/books/BookCard";
+
+import BookCard from "../components/book/BookCard";
 import CartBar from "../components/cart/CartBar";
 import { Badge } from "../components/ui/Badge";
-import { RatingStars } from "../components/books/RatingStarts";
+import { RatingStars } from "../components/book/RatingStars";
+import CategoriesSection from "../components/category/CategoriesSection";
+import { POP_CATEGORIES } from "../mocks/categories";
 
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
@@ -14,7 +18,10 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [featuredIndex, setFeaturedIndex] = useState(0);
 
-  const featured = books[featuredIndex % (books.length || 1)];
+  const featured = books.length
+    ? books[featuredIndex % books.length]
+    : undefined;
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q
@@ -43,12 +50,12 @@ export default function Home() {
               <RatingStars rating={featured.rating} />
             </div>
             <div className="mt-4 flex items-center gap-3">
-              <a
-                href={`/book/${featured.id}`}
+              <Link
+                to={`/book/${featured.id}`} // <- Link do router
                 className="rounded-full bg-indigo-600 text-white px-4 py-2"
               >
                 Comprar — {money(featured.price)}
-              </a>
+              </Link>
               <button
                 onClick={() => setFeaturedIndex((i) => (i + 1) % books.length)}
                 className="rounded-full border px-4 py-2 bg-white"
@@ -68,7 +75,10 @@ export default function Home() {
         </section>
       )}
 
-      {/* Catalogo */}
+      {/* Seção de categorias (opcional) */}
+      <CategoriesSection categories={POP_CATEGORIES} />
+
+      {/* Catálogo */}
       <section className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-4">
           <input

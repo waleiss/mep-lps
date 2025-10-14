@@ -1,5 +1,5 @@
 import type { Book } from "../../types/book";
-import { RatingStars } from "./RatingStarts";
+import { RatingStars } from "./RatingStars";
 import { IconButton } from "../ui/IconButton";
 import { useFavorites } from "../../context/FavoritesContext";
 import { useCart } from "../../context/CartContext";

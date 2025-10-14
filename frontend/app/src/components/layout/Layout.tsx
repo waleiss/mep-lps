@@ -3,7 +3,7 @@ import Navbar from "./Navbar";
 
 const TopBar = () => (
   <div className="w-full bg-indigo-900 text-white text-center text-xs tracking-wide py-2">
-    ALGUMA FRASE LEGAL AQUI ✨
+    Cada página, uma nova aventura ✨
   </div>
 );
 
