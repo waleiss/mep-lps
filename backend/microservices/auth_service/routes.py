@@ -25,7 +25,7 @@ router = APIRouter()
 async def root():
     """Endpoint raiz do serviço de autenticação"""
     return {
-        "service": "Auth Service",
+        "service": "Mundo em Palavras - Auth Service",
         "status": "running",
         "version": "1.0.0"
     }

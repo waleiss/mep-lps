@@ -21,6 +21,7 @@ class UserRegisterRequest(BaseModel):
     """Request schema for user registration"""
     email: EmailStr
     password: str
+    password_confirmation: str
     name: str
     
     @validator('name')
@@ -33,6 +34,14 @@ class UserRegisterRequest(BaseModel):
     def validate_password(cls, v):
         if not v or len(v.strip()) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        return v.strip()
+    
+    @validator('password_confirmation')
+    def validate_password_confirmation(cls, v, values):
+        if not v or len(v.strip()) == 0:
+            raise ValueError('Password confirmation cannot be empty')
+        if 'password' in values and v.strip() != values['password']:
+            raise ValueError('As senhas não coincidem')
         return v.strip()
 
 
