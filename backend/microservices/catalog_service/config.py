@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Database
-    database_url: str = "sqlite:///./catalog_service.db"
+    database_url: str = "postgresql://admin:admin1234@localhost:5432/mundo_palavras_catalog"
     
     # Redis Configuration (for caching)
     redis_url: str = "redis://localhost:6379/1"
