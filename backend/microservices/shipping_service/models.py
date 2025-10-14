@@ -25,6 +25,25 @@ class StatusFrete(enum.Enum):
     DEVOLVIDO = "devolvido"
     CANCELADO = "cancelado"
 
+class Endereco(Base):
+    __tablename__ = "enderecos"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, nullable=False, index=True)  # Referência externa ao serviço de usuários
+    cep = Column(String(8), nullable=False)
+    logradouro = Column(String(200), nullable=False)
+    numero = Column(String(20), nullable=False)
+    complemento = Column(String(100))
+    bairro = Column(String(100), nullable=False)
+    cidade = Column(String(100), nullable=False)
+    estado = Column(String(2), nullable=False)
+    apelido = Column(String(50))  # Ex: "Casa", "Trabalho", "Mãe"
+    principal = Column(Boolean, default=False)
+    ativo = Column(Boolean, default=True)
+    data_criacao = Column(DateTime, default=func.now())
+    data_atualizacao = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
 class Frete(Base):
     __tablename__ = "fretes"
     
