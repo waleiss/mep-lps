@@ -4,20 +4,22 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shipping-service"
-version = "1.0.0"
-description = "Microserviço de Frete - Mundo em Palavras"
+version = "2.0.0"
+description = "Microserviço de Frete e Endereços - Mundo em Palavras"
 authors = [{name = "Mundo em Palavras Team"}]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
-    "requests>=2.31.0",
+    "httpx>=0.25.0",
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
     "python-multipart>=0.0.6",
     "python-dotenv>=1.0.0",
-    "xmltodict>=0.13.0",
-    "zeep>=4.2.0"
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.12.0"
 ]
 
 [project.optional-dependencies]
