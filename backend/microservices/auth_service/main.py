@@ -1,4 +1,4 @@
-# Auth Service - Mundo em Palavras
+# Mundo em Palavras - Auth Service
 # Microserviço responsável pela autenticação e autorização de usuários
 # Implementa arquitetura limpa com separação de responsabilidades
 
@@ -13,7 +13,7 @@ from routes import router
 
 # Create FastAPI application
 app = FastAPI(
-    title="Auth Service",
+    title="Mundo em Palavras",
     description="Microserviço de autenticação e autorização - Mundo em Palavras",
     version="1.0.0",
     docs_url=settings.docs_url,
@@ -38,13 +38,13 @@ async def startup_event():
     """Initialize application on startup"""
     # Create database tables
     create_tables()
-    print("Auth Service started successfully!")
+    print("Mundo em Palavras - Auth Service started successfully!")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on application shutdown"""
-    print("Auth Service shutting down...")
+    print("Mundo em Palavras - Auth Service shutting down...")
 
 
 if __name__ == "__main__":
