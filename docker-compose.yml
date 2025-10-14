@@ -20,6 +20,11 @@ services:
     volumes:
       - ./backend/data/postgres_users:/var/lib/postgresql/data
       - ./backend/databases/postgres_users/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_users"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -37,6 +42,11 @@ services:
     volumes:
       - ./backend/data/postgres_catalog:/var/lib/postgresql/data
       - ./backend/databases/postgres_catalog/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_catalog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -54,6 +64,11 @@ services:
     volumes:
       - ./backend/data/postgres_cart:/var/lib/postgresql/data
       - ./backend/databases/postgres_cart/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_cart"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -71,6 +86,11 @@ services:
     volumes:
       - ./backend/data/postgres_orders:/var/lib/postgresql/data
       - ./backend/databases/postgres_orders/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -88,6 +108,11 @@ services:
     volumes:
       - ./backend/data/postgres_payments:/var/lib/postgresql/data
       - ./backend/databases/postgres_payments/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -105,6 +130,11 @@ services:
     volumes:
       - ./backend/data/postgres_shipping:/var/lib/postgresql/data
       - ./backend/databases/postgres_shipping/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_shipping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -122,6 +152,11 @@ services:
     volumes:
       - ./backend/data/postgres_recommendations:/var/lib/postgresql/data
       - ./backend/databases/postgres_recommendations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d mundo_palavras_recommendations"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -136,6 +171,11 @@ services:
       - ./backend/data/redis:/data
       - ./backend/databases/redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -158,8 +198,10 @@ services:
     ports:
       - "8001:8001"
     depends_on:
-      - postgres-users
-      - redis
+      postgres-users:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -176,8 +218,10 @@ services:
     ports:
       - "8002:8002"
     depends_on:
-      - postgres-catalog
-      - redis
+      postgres-catalog:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -194,8 +238,10 @@ services:
     ports:
       - "8003:8003"
     depends_on:
-      - postgres-cart
-      - redis
+      postgres-cart:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -213,7 +259,8 @@ services:
     ports:
       - "8004:8004"
     depends_on:
-      - postgres-shipping
+      postgres-shipping:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -231,7 +278,8 @@ services:
     ports:
       - "8005:8005"
     depends_on:
-      - postgres-payments
+      postgres-payments:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -248,8 +296,10 @@ services:
     ports:
       - "8006:8006"
     depends_on:
-      - postgres-orders
-      - redis
+      postgres-orders:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped
@@ -266,8 +316,10 @@ services:
     ports:
       - "8007:8007"
     depends_on:
-      - postgres-recommendations
-      - redis
+      postgres-recommendations:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - mundo-palavras-network
     restart: unless-stopped

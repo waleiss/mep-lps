@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Database
-    database_url: str = "sqlite:///./auth_service.db"
+    database_url: str = "postgresql://admin:admin1234@localhost:5432/mundo_palavras_users"
     
     # JWT Configuration
     secret_key: str = "your-super-secret-jwt-key-change-this-in-production"
