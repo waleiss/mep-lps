@@ -1,3 +1,0 @@
--- Banco de Dados 3 - Carrinho
--- Tabelas: carrinhos, itens_carrinho
--- Implementa RF3.1, RF3.2, RF3.3, RF3.4, RF3.5

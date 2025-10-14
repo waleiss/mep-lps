@@ -1,3 +1,0 @@
--- Banco de Dados 2 - Catálogo
--- Tabelas: livros, generos, autores, estoque
--- Implementa RF2.1, RF2.2, RF2.3, RF2.4, RF2.5
