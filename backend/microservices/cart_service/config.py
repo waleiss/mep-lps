@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Database
-    database_url: str = "sqlite:///./cart_service.db"
+    database_url: str = "postgresql://admin:admin1234@localhost:5434/mundo_palavras_cart"
     
     # Redis Configuration (for cart session caching)
     redis_url: str = "redis://localhost:6379/2"
