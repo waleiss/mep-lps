@@ -4,7 +4,7 @@ import Home from "../pages/Home";
 // import BookDetails from "../pages/BookDetails";
 // import Checkout from "../pages/Checkout";
 // import Login from "../pages/Login"; // página de login simples
-import { ProtectedRoute } from "./ProtectedRoute";
+// import { ProtectedRoute } from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
   {

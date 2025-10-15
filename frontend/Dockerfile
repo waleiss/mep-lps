@@ -6,11 +6,11 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY app/package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY app/ .
 
 RUN npm run build
 
