@@ -1,123 +1,71 @@
 # Payment Service - Mundo em Palavras
 # Microserviço responsável pelo processamento de pagamentos
-# Gerencia transações, métodos de pagamento e confirmações
+# Implementa arquitetura limpa com separação de responsabilidades
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import Optional
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-# Configuração da aplicação FastAPI
+from config import settings
+from database import create_tables
+from routes import router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gerencia o ciclo de vida da aplicação"""
+    # Startup
+    create_tables()
+    print("=" * 60)
+    print("Payment Service started successfully!")
+    print(f"API Docs: http://localhost:8005{settings.docs_url}")
+    print(f"Version: 2.0.0")
+    print(f"Environment: {settings.environment}")
+    print("=" * 60)
+    print("\nFeatures disponiveis:")
+    print("  - Pagamento com cartao de credito/debito")
+    print("  - Geracao de PIX (QR Code)")
+    print("  - Geracao de boleto bancario")
+    print("  - Consulta de status de pagamento")
+    print("  - Logs de transacao completos")
+    print("  - Simulacao de gateway de pagamento")
+    print("=" * 60)
+    
+    yield
+    
+    # Shutdown
+    print("\nPayment Service shutting down...")
+
+
+# Create FastAPI application
 app = FastAPI(
     title="Payment Service",
-    description="Microserviço de processamento de pagamentos",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
+    description="Microserviço de processamento de pagamentos - Mundo em Palavras",
+    version="2.0.0",
+    docs_url=settings.docs_url,
+    redoc_url=settings.redoc_url,
+    lifespan=lifespan
 )
 
-# Modelos Pydantic
-class PaymentRequest(BaseModel):
-    amount: float
-    currency: str = "BRL"
-    payment_method: str
-    order_id: str
-    customer_id: str
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class PaymentResponse(BaseModel):
-    payment_id: str
-    status: str
-    amount: float
-    currency: str
-    transaction_id: Optional[str] = None
+# Include API routes
+app.include_router(router, prefix=settings.api_prefix)
 
-class PaymentStatus(BaseModel):
-    payment_id: str
-    status: str
-    amount: float
-    created_at: str
-
-# Rotas básicas
-@app.get("/")
-async def root():
-    """Endpoint raiz do serviço de pagamento"""
-    return {
-        "service": "Payment Service",
-        "status": "running",
-        "version": "1.0.0"
-    }
-
-@app.get("/health")
-async def health_check():
-    """Health check do serviço"""
-    return {"status": "healthy", "service": "payment"}
-
-@app.post("/process", response_model=PaymentResponse)
-async def process_payment(payment: PaymentRequest):
-    """Processar pagamento"""
-    # TODO: Integrar com gateways de pagamento reais (Stripe, PagSeguro, etc.)
-    
-    # Mock de processamento
-    payment_id = f"pay_{len(payment.order_id)}_{payment.amount}"
-    
-    # Simular diferentes status baseado no valor
-    if payment.amount > 1000:
-        status = "failed"
-    else:
-        status = "completed"
-    
-    return PaymentResponse(
-        payment_id=payment_id,
-        status=status,
-        amount=payment.amount,
-        currency=payment.currency,
-        transaction_id=f"txn_{payment_id}" if status == "completed" else None
-    )
-
-@app.get("/payment/{payment_id}", response_model=PaymentStatus)
-async def get_payment_status(payment_id: str):
-    """Obter status do pagamento"""
-    # TODO: Buscar status real do gateway
-    return PaymentStatus(
-        payment_id=payment_id,
-        status="completed",
-        amount=99.90,
-        created_at="2025-10-08T20:00:00Z"
-    )
-
-@app.post("/refund/{payment_id}")
-async def refund_payment(payment_id: str, amount: Optional[float] = None):
-    """Processar estorno"""
-    # TODO: Implementar lógica de estorno
-    return {
-        "payment_id": payment_id,
-        "refund_id": f"ref_{payment_id}",
-        "status": "refunded",
-        "amount": amount or 99.90
-    }
-
-@app.get("/methods")
-async def get_payment_methods():
-    """Listar métodos de pagamento disponíveis"""
-    return {
-        "methods": [
-            {
-                "id": "credit_card",
-                "name": "Cartão de Crédito",
-                "enabled": True
-            },
-            {
-                "id": "pix",
-                "name": "PIX",
-                "enabled": True
-            },
-            {
-                "id": "boleto",
-                "name": "Boleto Bancário",
-                "enabled": True
-            }
-        ]
-    }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8005)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8005,
+        reload=settings.debug,
+        log_level="info" if not settings.debug else "debug"
+    )
