@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     catalog_service_url: str = "http://localhost:8002/api/v1"
     cart_service_url: str = "http://localhost:8003/api/v1"
     payment_service_url: str = "http://localhost:8005/api/v1"
-    shipping_service_url: str = "http://localhost:8006/api/v1"
+    shipping_service_url: str = "http://localhost:8004/api/v1"
     
     # Order Number Configuration
     order_number_prefix: str = "MP"  # Mundo em Palavras
