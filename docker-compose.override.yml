@@ -69,7 +69,7 @@ services:
 
   frontend:
     volumes:
-      - ./frontend:/app
+      - ./frontend/app:/app
       - /app/node_modules
     command: npm run dev
     environment:

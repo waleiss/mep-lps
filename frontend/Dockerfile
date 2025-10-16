@@ -1,19 +1,24 @@
 # Dockerfile para Frontend ReactJS
-# Imagem base Node.js com Vite para build
-# Configuração para produção
+# Build da aplicação React com Vite
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
+# Copiar package.json e package-lock.json
 COPY app/package*.json ./
 
-RUN npm install
+# Instalar dependências
+RUN npm ci
 
+# Copiar todo o código fonte
 COPY app/ .
 
+# Build da aplicação
 RUN npm run build
 
+# Expor porta
 EXPOSE 3000
 
-CMD ["npm", "run", "preview"]
+# Comando para servir a aplicação em preview mode
+CMD npx vite preview --host 0.0.0.0 --port 3000
