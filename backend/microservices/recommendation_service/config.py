@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Database
-    database_url: str = "postgresql://admin:admin1234@localhost:5437/mundo_palavras_recommendations"
+    database_url: str = "postgresql://admin:admin1234@localhost:5438/mundo_palavras_recommendations"
     
     # CORS Configuration
     allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:5173"]
