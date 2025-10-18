@@ -1,12 +1,13 @@
 import { createBrowserRouter } from "react-router-dom";
 import { Layout } from "../components/layout/Layout";
 import Home from "../pages/Home";
-// import BookDetails from "../pages/BookDetails";
-// import Checkout from "../pages/Checkout";
-// import Login from "../pages/Login"; // página de login simples
-// import { ProtectedRoute } from "./ProtectedRoute";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
+
+// import ProtectedRoute from "./ProtectedRoute";
 
 export const router = createBrowserRouter([
+  // 🌐 Página inicial pública
   {
     path: "/",
     element: (
@@ -15,30 +16,41 @@ export const router = createBrowserRouter([
       </Layout>
     ),
   },
+
+  // 🔐 Rotas protegidas
   // {
-  //   path: "/book/:id",
-  //   element: (
-  //     <Layout>
-  //       <BookDetails />
-  //     </Layout>
-  //   ),
+  //   element: <ProtectedRoute />, // Tudo dentro daqui exige login
+  //   children: [
+  //     {
+  //       path: "/checkout",
+  //       element: (
+  //         <Layout>
+  //           <Checkout />
+  //         </Layout>
+  //       ),
+  //     },
+  //     // outras rotas privadas aqui (perfil, pedidos, etc.)
+  //   ],
   // },
-  // {
-  //   path: "/checkout",
-  //   element: (
-  //     <Layout>
-  //       <ProtectedRoute>
-  //         <Checkout />
-  //       </ProtectedRoute>
-  //     </Layout>
-  //   ),
-  // },
-  // {
-  //   path: "/login",
-  //   element: (
-  //     <Layout>
-  //       <Login />
-  //     </Layout>
-  //   ),
-  // },
+
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+
+  // 🚫 404 (opcional)
+  {
+    path: "*",
+    element: (
+      <Layout>
+        <h1 className="text-center mt-10 text-xl font-semibold">
+          Página não encontrada
+        </h1>
+      </Layout>
+    ),
+  },
 ]);
