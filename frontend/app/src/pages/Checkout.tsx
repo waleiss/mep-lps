@@ -9,6 +9,11 @@ import {
   processarPagamentoBoleto 
 } from "../services/paymentApi";
 import type { PaymentMethod } from "../types/payment";
+import { 
+  gerarBoletoPDF, 
+  formatarDataBrasileira, 
+  calcularVencimento 
+} from "../utils/boletoGenerator";
 
 type FormAddress = {
   name: string;
@@ -60,6 +65,7 @@ export default function Checkout() {
     exp: "",
     cvv: "",
   });
+  const [cpfCnpj, setCpfCnpj] = useState("");
 
   // ------------------ buscar CEP ------------------
   useEffect(() => {
@@ -106,7 +112,14 @@ export default function Checkout() {
   }, [address]);
 
   const paymentValid = useMemo(() => {
-    if (payMethod === "pix" || payMethod === "boleto") return true;
+    if (payMethod === "pix") return true;
+    
+    if (payMethod === "boleto") {
+      // Valida CPF ou CNPJ (apenas formato simples)
+      const doc = cpfCnpj.replace(/\D/g, "");
+      return doc.length === 11 || doc.length === 14;
+    }
+    
     // cartão bem simples (não é validação de verdade)
     return (
       card.holder.trim().length > 4 &&
@@ -114,7 +127,7 @@ export default function Checkout() {
       /^\d{2}\/\d{2}$/.test(card.exp) &&
       /^\d{3,4}$/.test(card.cvv)
     );
-  }, [payMethod, card]);
+  }, [payMethod, card, cpfCnpj]);
 
   const canFinish =
     !!user &&
@@ -178,17 +191,35 @@ export default function Checkout() {
           alert(`Pagamento PIX gerado!\n\nQR Code: ${paymentResponse.qr_code.substring(0, 50)}...\n\nPague e aguarde confirmação.`);
         }
       } else if (payMethod === "boleto") {
-        // Para boleto, precisaríamos do CPF/CNPJ
-        // Por enquanto, usando um CPF fictício
         paymentResponse = await processarPagamentoBoleto({
           usuario_id: parseInt(user.id),
           pedido_id: pedidoId,
           valor: total,
-          cpf_cnpj: "12345678901",
+          cpf_cnpj: cpfCnpj.replace(/\D/g, ""),
         });
         
-        if (paymentResponse.linha_digitavel) {
-          alert(`Boleto gerado!\n\nLinha digitável: ${paymentResponse.linha_digitavel}\n\nVencimento em 3 dias úteis.`);
+        // Gera e abre o boleto em PDF em nova aba
+        if (paymentResponse.linha_digitavel && paymentResponse.codigo_barras) {
+          gerarBoletoPDF({
+            linha_digitavel: paymentResponse.linha_digitavel,
+            codigo_barras: paymentResponse.codigo_barras,
+            valor: total,
+            vencimento: calcularVencimento(3),
+            beneficiario: {
+              nome: "Mundo em Palavras LTDA",
+              cnpj: "12.345.678/0001-90",
+              agencia: "1234",
+              conta: "56789-0",
+            },
+            pagador: {
+              nome: address.name,
+              cpf_cnpj: cpfCnpj,
+              endereco: `${address.street}, ${address.number} - ${address.city}/${address.state}`,
+            },
+            numero_documento: paymentResponse.codigo_transacao,
+            data_documento: formatarDataBrasileira(),
+            data_processamento: formatarDataBrasileira(),
+          });
         }
       }
 
@@ -205,11 +236,35 @@ export default function Checkout() {
       nav("/account");
     } catch (error: any) {
       console.error("Erro ao finalizar pedido:", error);
-      setPaymentError(
-        error.response?.data?.detail || 
-        error.message || 
-        "Erro ao processar pedido. Tente novamente."
-      );
+      
+      // Trata diferentes formatos de erro da API
+      let errorMessage = "Erro ao processar pedido. Tente novamente.";
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        
+        // Se detail for um array de erros de validação
+        if (Array.isArray(detail)) {
+          errorMessage = detail
+            .map((err: any) => {
+              const field = err.loc ? err.loc.join(" -> ") : "campo";
+              return `${field}: ${err.msg}`;
+            })
+            .join(", ");
+        } 
+        // Se detail for uma string
+        else if (typeof detail === "string") {
+          errorMessage = detail;
+        }
+        // Se detail for um objeto
+        else if (typeof detail === "object") {
+          errorMessage = JSON.stringify(detail);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setPaymentError(errorMessage);
     } finally {
       setProcessing(false);
     }
@@ -408,9 +463,17 @@ export default function Checkout() {
           )}
 
           {payMethod === "boleto" && (
-            <p className="text-sm text-slate-600">
-              O boleto será gerado após confirmar o pedido (mock).
-            </p>
+            <div className="space-y-3">
+              <Input
+                label="CPF ou CNPJ"
+                placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                value={cpfCnpj}
+                onChange={(v) => setCpfCnpj(v)}
+              />
+              <p className="text-sm text-slate-600">
+                O boleto será gerado após confirmar o pedido.
+              </p>
+            </div>
           )}
 
           {!paymentValid && (
