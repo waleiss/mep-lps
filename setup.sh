@@ -123,22 +123,37 @@ else
     fi
 fi
 
-# Instalar dependências do frontend
-echo "📦 Instalando dependências do frontend..."
+# Instalar dependências do frontend (inclui devDependencies como TypeScript e @types/*)
+echo "📦 Instalando dependências do frontend (frontend/app)..."
 if command -v npm >/dev/null 2>&1; then
-    cd frontend
+    cd frontend/app || { echo "❌ Diretório frontend/app não encontrado"; cd - > /dev/null; }
     if [ -f "package.json" ]; then
-        npm install
-        if [ $? -eq 0 ]; then
-            echo "✅ Dependências do frontend instaladas com sucesso"
+        # prefer deterministic install when lockfile exists
+        if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ]; then
+            echo "➡️  Executando: npm ci"
+            npm ci --unsafe-perm
+            rc=$?
         else
-            echo "❌ Erro ao instalar dependências do frontend"
+            echo "➡️  Executando: npm install"
+            npm install --unsafe-perm
+            rc=$?
+        fi
+
+        if [ $rc -eq 0 ]; then
+            echo "✅ Dependências do frontend instaladas com sucesso"
+            # Run a quick TypeScript build check so devDependencies (typescript, @types/...) are validated
+            if command -v npx >/dev/null 2>&1; then
+                echo "🧪 Executando checagem TypeScript (npx tsc -b)..."
+                npx tsc -b --pretty || echo "⚠️  Checagem TypeScript retornou erro, mas continuando"
+            fi
+        else
+            echo "❌ Erro ao instalar dependências do frontend (exit code $rc)"
             echo "⚠️  Continuando sem as dependências do frontend..."
         fi
     else
-        echo "⚠️  package.json não encontrado no frontend"
+        echo "⚠️  package.json não encontrado em frontend/app"
     fi
-    cd ..
+    cd - > /dev/null
 else
     echo "⚠️  npm não encontrado - pulando instalação do frontend"
     echo "💡 Para instalar Node.js: https://nodejs.org/"
