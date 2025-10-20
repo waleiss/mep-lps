@@ -35,44 +35,37 @@ backend/
 
 ### 1. Auth Service (Porta 8001)
 - **Função**: Gerenciamento de usuários e autenticação
-- **RF**: RF1.1, RF1.2, RF1.3, RF1.4
 - **Banco**: PostgreSQL Users
 - **Endpoints**: /register, /login, /recover-password, /profile
 
 ### 2. Catalog Service (Porta 8002)
 - **Função**: Catálogo de livros, busca e filtros
-- **RF**: RF2.1, RF2.2, RF2.3, RF2.4, RF2.5
 - **Banco**: PostgreSQL Catalog + Redis Cache
 - **Endpoints**: /books, /search, /filters, /details
 
 ### 3. Cart Service (Porta 8003)
 - **Função**: Carrinho de compras
-- **RF**: RF3.1, RF3.2, RF3.3, RF3.4, RF3.5
 - **Banco**: PostgreSQL Cart + Redis Cache
 - **Endpoints**: /add-item, /remove-item, /update-quantity
 
 ### 4. Shipping Service (Porta 8004)
 - **Função**: Cálculo de frete e endereços
-- **RF**: RF4.1, RF4.2
 - **Integração**: API Correios
 - **Endpoints**: /calculate-shipping, /addresses
 
 ### 5. Payment Service (Porta 8005)
 - **Função**: Processamento de pagamentos
-- **RF**: RF4.3
 - **Banco**: PostgreSQL Payments
 - **Integração**: Gateway de pagamento
 - **Endpoints**: /process-payment, /payment-methods
 
 ### 6. Order Service (Porta 8006)
 - **Função**: Gerenciamento de pedidos
-- **RF**: RF4.4, RF4.5, RF4.6
 - **Banco**: PostgreSQL Orders
 - **Endpoints**: /orders, /order-history, /confirmation
 
 ### 7. Recommendation Service (Porta 8007)
 - **Função**: Sistema de recomendações
-- **RF**: RF5.1, RF5.2
 - **Banco**: PostgreSQL + Redis Cache
 - **Endpoints**: /recommendations, /related-books, /best-sellers
 
