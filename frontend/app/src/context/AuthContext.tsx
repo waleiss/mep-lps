@@ -1,4 +1,3 @@
-// src/context/AuthContext.tsx
 import React, {
   createContext,
   useCallback,
@@ -11,10 +10,19 @@ import {
   login as apiLogin,
   register as apiRegister,
   refresh as apiRefresh,
-  type AuthUser,
   type LoginInput,
   type RegisterInput,
+  type LoginResponse,
+  type RegisterResponse,
 } from "../services/authApi";
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  tipo: string;
+  ativo: boolean;
+};
 
 type AuthState = {
   user: AuthUser | null;
@@ -39,9 +47,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     const raw = localStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   });
+
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_KEY)
   );
+
   const [loading, setLoading] = useState(false);
 
   const persist = (u: AuthUser | null, t: string | null) => {
@@ -56,8 +66,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const login = useCallback(async (data: LoginInput) => {
     setLoading(true);
     try {
-      const res = await apiLogin(data);
-      persist(res.user, res.access_token);
+      const res: LoginResponse = await apiLogin(data);
+
+      const mappedUser: AuthUser = {
+        id: String(res.user_id),
+        name: res.nome,
+        email: res.email,
+        tipo: res.tipo,
+        ativo: res.ativo,
+      };
+
+      console.log("🔑 Login response:", res);
+      console.log("👤 Mapeado para AuthUser:", mappedUser);
+
+      persist(mappedUser, res.access_token);
     } finally {
       setLoading(false);
     }
@@ -66,8 +88,18 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const register = useCallback(async (data: RegisterInput) => {
     setLoading(true);
     try {
-      const res = await apiRegister(data);
-      persist(res.user, res.access_token);
+      const res: RegisterResponse = await apiRegister(data);
+
+      const mappedUser: AuthUser = {
+        id: String(res.user_id),
+        name: res.nome,
+        email: res.email,
+        tipo: res.tipo,
+        ativo: res.ativo,
+      };
+
+      console.log("🆕 Register response:", res);
+      persist(mappedUser, res.access_token);
     } finally {
       setLoading(false);
     }
@@ -77,7 +109,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     persist(null, null);
   }, []);
 
-  // (Opcional) tentar refresh on mount se usa cookie/refresh_token
+  // opcional — tenta refresh quando app abre
   useEffect(() => {
     const tryRefresh = async () => {
       if (!token) return;
@@ -85,7 +117,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         const res = await apiRefresh();
         persist(user, res.access_token);
       } catch {
-        // token inválido
         persist(null, null);
       }
     };
@@ -97,6 +128,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     () => ({ user, token, loading, login, register, logout }),
     [user, token, loading, login, register, logout]
   );
+
+  // 🔍 debug visual
+  useEffect(() => {
+    console.log("👤 AuthContext — user atualizado:", user);
+  }, [user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
