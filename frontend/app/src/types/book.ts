@@ -1,4 +1,6 @@
 export type Book = {
+categories?: string[];
+coverUrl: string | undefined;
 id: string;
 title: string;
 author: string;

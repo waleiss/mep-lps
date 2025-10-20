@@ -1,3 +1,4 @@
+// src/context/CartContext.tsx
 import React, { createContext, useContext, useMemo } from "react";
 import type { CartItem, Book } from "../types/book";
 import { useLocalStorage } from "../hooks/useLocalStorage";
@@ -7,6 +8,8 @@ interface CartCtx {
   add: (b: Book) => void;
   remove: (id: string) => void;
   clear: () => void;
+  subtotal: number;
+  shipping: number;
   total: number;
   count: number;
 }
@@ -34,14 +37,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     setItems((prev) => prev.filter((it) => it.book.id !== id));
   const clear = () => setItems([]);
 
-  const total = useMemo(
-    () => items.reduce((a, c) => a + c.book.price * c.qty, 0),
+  const subtotal = useMemo(
+    () => items.reduce((acc, it) => acc + it.book.price * it.qty, 0),
     [items]
   );
-  const count = useMemo(() => items.reduce((a, c) => a + c.qty, 0), [items]);
+
+  // regra mock de frete (ajuste como quiser)
+  const shipping = useMemo(() => (items.length > 0 ? 19.9 : 0), [items]);
+
+  const total = useMemo(() => subtotal + shipping, [subtotal, shipping]);
+
+  const count = useMemo(
+    () => items.reduce((acc, it) => acc + it.qty, 0),
+    [items]
+  );
 
   return (
-    <Ctx.Provider value={{ items, add, remove, clear, total, count }}>
+    <Ctx.Provider
+      value={{ items, add, remove, clear, subtotal, shipping, total, count }}
+    >
       {children}
     </Ctx.Provider>
   );

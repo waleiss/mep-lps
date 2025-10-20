@@ -3,11 +3,14 @@ import { Layout } from "../components/layout/Layout";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-
-// import ProtectedRoute from "./ProtectedRoute";
+import Checkout from "../pages/Checkout";
+import Orders from "../pages/Orders";
+import Profile from "../pages/Profile";
+import ProtectedRoute from "./ProtectedRoute";
+import BookDetails from "../pages/BookDetails";
+import Favorites from "../pages/Favorites";
 
 export const router = createBrowserRouter([
-  // 🌐 Página inicial pública
   {
     path: "/",
     element: (
@@ -17,21 +20,15 @@ export const router = createBrowserRouter([
     ),
   },
 
-  // 🔐 Rotas protegidas
-  // {
-  //   element: <ProtectedRoute />, // Tudo dentro daqui exige login
-  //   children: [
-  //     {
-  //       path: "/checkout",
-  //       element: (
-  //         <Layout>
-  //           <Checkout />
-  //         </Layout>
-  //       ),
-  //     },
-  //     // outras rotas privadas aqui (perfil, pedidos, etc.)
-  //   ],
-  // },
+  {
+    path: "/book/:id",
+    element: (
+      <Layout>
+        <BookDetails />
+      </Layout>
+    ),
+  },
+  { path: "/favorites", element: <Favorites /> },
 
   {
     path: "/login",
@@ -41,8 +38,36 @@ export const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: "/checkout",
+        element: (
+          <Layout>
+            <Checkout />
+          </Layout>
+        ),
+      },
+      {
+        path: "/account",
+        element: (
+          <Layout>
+            <Orders />
+          </Layout>
+        ),
+      },
+      {
+        path: "/account/profile",
+        element: (
+          <Layout>
+            <Profile />
+          </Layout>
+        ),
+      },
+    ],
+  },
 
-  // 🚫 404 (opcional)
   {
     path: "*",
     element: (

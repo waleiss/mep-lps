@@ -1,11 +1,16 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
 
 export default function CartBar() {
+  const nav = useNavigate();
   const { items, total, clear } = useCart();
   if (!items.length) return null;
+
+  const goCheckout = () => nav("/checkout");
+
   return (
     <section className="sticky bottom-4 z-10">
       <div className="max-w-6xl mx-auto px-4">
@@ -21,12 +26,22 @@ export default function CartBar() {
             >
               Limpar
             </button>
-            <a
-              href="/checkout"
+
+            <Link
+              to="/checkout"
               className="rounded-full bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
             >
               Finalizar compra
-            </a>
+            </Link>
+
+            {/* Opção 2: botão com navigate
+            <button
+              onClick={goCheckout}
+              className="rounded-full bg-emerald-600 text-white px-4 py-2 hover:bg-emerald-700"
+            >
+              Finalizar compra
+            </button>
+            */}
           </div>
         </div>
       </div>
