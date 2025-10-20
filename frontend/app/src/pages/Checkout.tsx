@@ -1,9 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { consultarCEP, criarEndereco } from "../services/addressApi";
+import { 
+  processarPagamentoCartao, 
+  processarPagamentoPix, 
+  processarPagamentoBoleto 
+} from "../services/paymentApi";
+import type { PaymentMethod } from "../types/payment";
 
-type Address = {
+type FormAddress = {
   name: string;
   zip: string;
   street: string;
@@ -11,9 +18,8 @@ type Address = {
   complement?: string;
   city: string;
   state: string;
+  neighborhood: string;
 };
-
-type PaymentMethod = "card" | "pix" | "boleto";
 
 type CardData = {
   holder: string;
@@ -31,7 +37,7 @@ export default function Checkout() {
   const { items, subtotal, shipping, total, clear } = useCart();
 
   // ------------------ estado do formulário ------------------
-  const [address, setAddress] = useState<Address>({
+  const [address, setAddress] = useState<FormAddress>({
     name: user?.name ?? "",
     zip: "",
     street: "",
@@ -39,7 +45,13 @@ export default function Checkout() {
     complement: "",
     city: "",
     state: "",
+    neighborhood: "",
   });
+
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [cepError, setCepError] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
 
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [card, setCard] = useState<CardData>({
@@ -49,12 +61,46 @@ export default function Checkout() {
     cvv: "",
   });
 
+  // ------------------ buscar CEP ------------------
+  useEffect(() => {
+    const cepLimpo = address.zip.replace(/\D/g, "");
+    
+    if (cepLimpo.length === 8) {
+      setLoadingCep(true);
+      setCepError("");
+      
+      consultarCEP(cepLimpo)
+        .then((data) => {
+          if (data.erro) {
+            setCepError("CEP não encontrado");
+            return;
+          }
+          
+          setAddress((prev) => ({
+            ...prev,
+            street: data.logradouro || prev.street,
+            neighborhood: data.bairro || prev.neighborhood,
+            city: data.localidade || prev.city,
+            state: data.uf || prev.state,
+            complement: data.complemento || prev.complement,
+          }));
+        })
+        .catch((err) => {
+          console.error("Erro ao consultar CEP:", err);
+          setCepError("Erro ao buscar CEP. Digite manualmente.");
+        })
+        .finally(() => {
+          setLoadingCep(false);
+        });
+    }
+  }, [address.zip]);
+
   // ------------------ validações simples ------------------
   const perfilIncompleto = !user || !user.email || !user.name;
 
   const addressValid = useMemo(() => {
-    const { name, zip, street, number, city, state } = address;
-    return [name, zip, street, number, city, state].every(
+    const { name, zip, street, number, city, state, neighborhood } = address;
+    return [name, zip, street, number, city, state, neighborhood].every(
       (v) => v && v.trim().length > 0
     );
   }, [address]);
@@ -77,18 +123,96 @@ export default function Checkout() {
     addressValid &&
     paymentValid;
 
-  // ------------------ finalizar (mock) ------------------
-  const finishOrder = () => {
-    if (!canFinish) return;
+  // ------------------ finalizar pedido ------------------
+  const finishOrder = async () => {
+    if (!canFinish || !user) return;
 
-    // Aqui você chamaria o gateway:
-    // await ordersApi.create({
-    //   items, address, payment: { method: payMethod, card },
-    //   total, subtotal, shipping
-    // });
+    setProcessing(true);
+    setPaymentError("");
 
-    clear();
-    nav("/account"); // "Meus pedidos"
+    try {
+      // 1. Criar endereço
+      const enderecoData = {
+        usuario_id: parseInt(user.id),
+        cep: address.zip.replace(/\D/g, ""),
+        logradouro: address.street,
+        numero: address.number,
+        complemento: address.complement || "",
+        bairro: address.neighborhood,
+        cidade: address.city,
+        estado: address.state,
+        apelido: "Endereço de entrega",
+        principal: false,
+      };
+
+      const enderecoResponse = await criarEndereco(enderecoData);
+      console.log("Endereço criado:", enderecoResponse);
+
+      // 2. Para criar o pedido, precisaríamos de uma API de orders
+      // Por enquanto, vamos simular um pedido_id
+      const pedidoId = Math.floor(Math.random() * 10000) + 1;
+
+      // 3. Processar pagamento
+      let paymentResponse;
+      
+      if (payMethod === "card") {
+        paymentResponse = await processarPagamentoCartao({
+          usuario_id: parseInt(user.id),
+          pedido_id: pedidoId,
+          valor: total,
+          numero_cartao: card.number.replace(/\s/g, ""),
+          nome_titular: card.holder,
+          validade: card.exp,
+          cvv: card.cvv,
+          parcelas: 1,
+        });
+      } else if (payMethod === "pix") {
+        paymentResponse = await processarPagamentoPix({
+          usuario_id: parseInt(user.id),
+          pedido_id: pedidoId,
+          valor: total,
+        });
+        
+        // Se for PIX, mostrar QR Code
+        if (paymentResponse.qr_code) {
+          alert(`Pagamento PIX gerado!\n\nQR Code: ${paymentResponse.qr_code.substring(0, 50)}...\n\nPague e aguarde confirmação.`);
+        }
+      } else if (payMethod === "boleto") {
+        // Para boleto, precisaríamos do CPF/CNPJ
+        // Por enquanto, usando um CPF fictício
+        paymentResponse = await processarPagamentoBoleto({
+          usuario_id: parseInt(user.id),
+          pedido_id: pedidoId,
+          valor: total,
+          cpf_cnpj: "12345678901",
+        });
+        
+        if (paymentResponse.linha_digitavel) {
+          alert(`Boleto gerado!\n\nLinha digitável: ${paymentResponse.linha_digitavel}\n\nVencimento em 3 dias úteis.`);
+        }
+      }
+
+      console.log("Pagamento processado:", paymentResponse);
+
+      if (paymentResponse?.status === "recusado") {
+        setPaymentError(paymentResponse.mensagem || "Pagamento recusado. Tente outro cartão.");
+        return;
+      }
+
+      // 4. Limpar carrinho e redirecionar
+      clear();
+      alert("Pedido realizado com sucesso! 🎉");
+      nav("/account");
+    } catch (error: any) {
+      console.error("Erro ao finalizar pedido:", error);
+      setPaymentError(
+        error.response?.data?.detail || 
+        error.message || 
+        "Erro ao processar pedido. Tente novamente."
+      );
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (items.length === 0) {
@@ -157,21 +281,36 @@ export default function Checkout() {
               value={address.name}
               onChange={(v) => setAddress((a) => ({ ...a, name: v }))}
             />
-            <Input
-              label="CEP"
-              placeholder="00000-000"
-              value={address.zip}
-              onChange={(v) => setAddress((a) => ({ ...a, zip: v }))}
-            />
+            <div>
+              <Input
+                label="CEP"
+                placeholder="00000-000"
+                value={address.zip}
+                onChange={(v) => setAddress((a) => ({ ...a, zip: v }))}
+              />
+              {loadingCep && (
+                <p className="text-xs text-blue-600 mt-1">Buscando CEP...</p>
+              )}
+              {cepError && (
+                <p className="text-xs text-red-600 mt-1">{cepError}</p>
+              )}
+            </div>
             <Input
               label="Rua"
               value={address.street}
               onChange={(v) => setAddress((a) => ({ ...a, street: v }))}
+              disabled={loadingCep}
             />
             <Input
               label="Número"
               value={address.number}
               onChange={(v) => setAddress((a) => ({ ...a, number: v }))}
+            />
+            <Input
+              label="Bairro"
+              value={address.neighborhood}
+              onChange={(v) => setAddress((a) => ({ ...a, neighborhood: v }))}
+              disabled={loadingCep}
             />
             <Input
               label="Complemento (opcional)"
@@ -182,11 +321,13 @@ export default function Checkout() {
               label="Cidade"
               value={address.city}
               onChange={(v) => setAddress((a) => ({ ...a, city: v }))}
+              disabled={loadingCep}
             />
             <Input
               label="Estado"
               value={address.state}
               onChange={(v) => setAddress((a) => ({ ...a, state: v }))}
+              disabled={loadingCep}
             />
           </div>
           {!addressValid && (
@@ -238,7 +379,18 @@ export default function Checkout() {
                 label="Validade (MM/AA)"
                 placeholder="MM/AA"
                 value={card.exp}
-                onChange={(v) => setCard((c) => ({ ...c, exp: v }))}
+                onChange={(v) => {
+                  // Remove non-digits
+                  const cleaned = v.replace(/\D/g, '');
+                  // Add the / after 2 digits if we have at least 2 digits
+                  let formatted = cleaned;
+                  if (cleaned.length >= 2) {
+                    formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+                  }
+                  // Limit to MM/AA format (5 characters)
+                  formatted = formatted.slice(0, 5);
+                  setCard((c) => ({ ...c, exp: formatted }));
+                }}
               />
               <Input
                 label="CVV"
@@ -287,16 +439,20 @@ export default function Checkout() {
         </div>
 
         <button
-          disabled={!canFinish}
+          disabled={!canFinish || processing}
           onClick={finishOrder}
           className={`w-full mt-4 rounded-lg py-2.5 ${
-            canFinish
+            canFinish && !processing
               ? "bg-indigo-700 text-white hover:bg-indigo-800"
               : "bg-slate-200 text-slate-500 cursor-not-allowed"
           }`}
         >
-          Finalizar compra
+          {processing ? "Processando..." : "Finalizar compra"}
         </button>
+
+        {paymentError && (
+          <p className="text-xs text-red-600 mt-2">{paymentError}</p>
+        )}
 
         <p className="text-xs text-slate-500 mt-2">
           Ao finalizar, você concorda com nossos termos e condições.
@@ -312,11 +468,13 @@ function Input({
   value,
   onChange,
   placeholder,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="text-sm">
@@ -325,7 +483,10 @@ function Input({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 outline-none"
+        disabled={disabled}
+        className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400 outline-none ${
+          disabled ? "bg-gray-100 cursor-not-allowed" : ""
+        }`}
       />
     </label>
   );
