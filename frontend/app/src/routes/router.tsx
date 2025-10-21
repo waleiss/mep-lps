@@ -9,6 +9,10 @@ import Profile from "../pages/Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import BookDetails from "../pages/BookDetails";
 import Favorites from "../pages/Favorites";
+import AdminLayout from "../components/layout/AdminLayout";
+import AdminBooks from "../pages/admin/Books";
+import AdminOrders from "../pages/admin/Orders";
+import AdminProtected from "./AdminProtected";
 
 export const router = createBrowserRouter([
   {
@@ -64,6 +68,22 @@ export const router = createBrowserRouter([
             <Profile />
           </Layout>
         ),
+      },
+    ],
+  },
+
+  // 🧩 Admin area
+  {
+    path: "/admin",
+    element: <AdminProtected />,
+    children: [
+      {
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <AdminBooks /> },
+          { path: "livros", element: <AdminBooks /> },
+          { path: "pedidos", element: <AdminOrders /> },
+        ],
       },
     ],
   },
