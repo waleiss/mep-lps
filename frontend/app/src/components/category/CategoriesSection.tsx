@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type { Category } from "../../mocks/categories";
+import type { Category } from "../../types/category";
 
 type Props = {
   title?: string;

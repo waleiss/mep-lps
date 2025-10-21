@@ -1,15 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
 
 export default function CartBar() {
-  const nav = useNavigate();
   const { items, total, clear } = useCart();
   if (!items.length) return null;
 
-  const goCheckout = () => nav("/checkout");
 
   return (
     <section className="sticky bottom-4 z-10">

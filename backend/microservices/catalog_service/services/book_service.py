@@ -38,6 +38,7 @@ class BookService:
             "edicao": book.edicao,
             "numero_paginas": book.numero_paginas,
             "sinopse": book.sinopse,
+            "imagem_url": book.imagem_url,
             "preco": float(book.preco) if book.preco else 0.0,
             "estoque": book.estoque,
             "categoria": book.categoria.value if book.categoria else None,
