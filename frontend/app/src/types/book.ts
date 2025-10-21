@@ -1,15 +1,21 @@
 export type Book = {
-categories?: string[];
-coverUrl: string | undefined;
-id: string;
-title: string;
-author: string;
-price: number;
-rating: number;
-cover: string;
-tagline?: string;
-description?: string;
+  id: string;
+  title: string;
+  author: string;
+  price: number;
+  rating: number;
+  cover: string;
+  coverUrl?: string;
+  isbn?: string;
+  publisher?: string;
+  year?: number;
+  pages?: number;
+  description?: string;
+  category?: string;
+  condition?: string;
+  stock?: number;
+  tagline?: string;
+  categories?: string[];
 };
-
 
 export type CartItem = { book: Book; qty: number };

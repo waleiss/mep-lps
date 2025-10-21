@@ -7,8 +7,6 @@ import BookCard from "../components/book/BookCard";
 import CartBar from "../components/cart/CartBar";
 import { Badge } from "../components/ui/Badge";
 import { RatingStars } from "../components/book/RatingStars";
-import CategoriesSection from "../components/category/CategoriesSection";
-import { POP_CATEGORIES } from "../mocks/categories";
 
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
@@ -74,9 +72,6 @@ export default function Home() {
           </div>
         </section>
       )}
-
-      {/* Seção de categorias (opcional) */}
-      <CategoriesSection categories={POP_CATEGORIES} />
 
       {/* Catálogo */}
       <section className="max-w-6xl mx-auto px-4 py-8">
