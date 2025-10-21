@@ -16,6 +16,7 @@ class BookBase(BaseModel):
     edicao: Optional[str] = Field(None, max_length=50, description="Edição")
     numero_paginas: Optional[int] = Field(None, ge=1, description="Número de páginas")
     sinopse: Optional[str] = Field(None, description="Sinopse do livro")
+    imagem_url: Optional[str] = Field(None, max_length=500, description="URL da imagem de capa")
     preco: float = Field(..., ge=0, description="Preço do livro")
     estoque: int = Field(default=0, ge=0, description="Quantidade em estoque")
     categoria: str = Field(..., description="Categoria do livro")
@@ -64,6 +65,7 @@ class BookUpdate(BaseModel):
     edicao: Optional[str] = Field(None, max_length=50)
     numero_paginas: Optional[int] = Field(None, ge=1)
     sinopse: Optional[str] = None
+    imagem_url: Optional[str] = Field(None, max_length=500)
     preco: Optional[float] = Field(None, ge=0)
     estoque: Optional[int] = Field(None, ge=0)
     categoria: Optional[str] = None
@@ -109,18 +111,19 @@ class BookResponse(BaseModel):
     titulo: str
     autor: str
     isbn: str
-    editora: Optional[str]
-    ano_publicacao: Optional[int]
-    edicao: Optional[str]
-    numero_paginas: Optional[int]
-    sinopse: Optional[str]
+    editora: Optional[str] = None
+    ano_publicacao: Optional[int] = None
+    edicao: Optional[str] = None
+    numero_paginas: Optional[int] = None
+    sinopse: Optional[str] = None
+    imagem_url: Optional[str] = None
     preco: float
     estoque: int
     categoria: str
     condicao: str
     ativo: bool
-    data_criacao: Optional[str]
-    data_atualizacao: Optional[str]
+    data_criacao: Optional[str] = None
+    data_atualizacao: Optional[str] = None
     
     class Config:
         from_attributes = True

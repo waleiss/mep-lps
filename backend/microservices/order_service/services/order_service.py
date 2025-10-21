@@ -436,7 +436,8 @@ class OrderService:
         self,
         page: int = 1,
         page_size: int = 20,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        usuario_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Get all orders with pagination (Admin)
@@ -465,7 +466,8 @@ class OrderService:
         orders, total = self.order_repo.get_all(
             skip=skip,
             limit=page_size,
-            status=status_enum
+            status=status_enum,
+            usuario_id=usuario_id
         )
         
         # Serialize orders

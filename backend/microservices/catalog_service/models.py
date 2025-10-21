@@ -36,6 +36,7 @@ class Livro(Base):
     edicao = Column(String(50))
     numero_paginas = Column(Integer)
     sinopse = Column(Text)
+    imagem_url = Column(String(500))  # URL da imagem de capa do livro
     preco = Column(Numeric(10, 2), nullable=False)
     estoque = Column(Integer, default=0)
     categoria = Column(SQLEnum(Categoria), default=Categoria.OUTROS)

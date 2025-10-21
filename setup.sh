@@ -108,37 +108,79 @@ else
     echo "⚠️  Ambiente virtual não foi ativado, mas continuando..."
 fi
 
-# Criar arquivo .env
-echo "⚙️  Configurando arquivo .env..."
+# Criar arquivo .env na raiz (Backend/Docker)
+echo "⚙️  Configurando arquivo .env na raiz..."
 if [ -f ".env" ]; then
     echo "📋 Arquivo .env já existe, mantendo configurações existentes"
 else
-    if [ -f "env.example" ]; then
-        cp env.example .env
-        echo "✅ Arquivo .env criado a partir do env.example"
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        echo "✅ Arquivo .env criado a partir do .env.example"
         echo "⚠️  Lembre-se de ajustar as configurações no arquivo .env conforme necessário"
     else
-        echo "❌ Arquivo env.example não encontrado"
+        echo "❌ Arquivo .env.example não encontrado"
         exit 1
     fi
 fi
 
-# Instalar dependências do frontend
-echo "📦 Instalando dependências do frontend..."
+# Criar arquivo .env do frontend (Vite)
+echo "⚙️  Configurando arquivo .env do frontend..."
+if [ -f "frontend/app/.env" ]; then
+    echo "📋 Arquivo .env do frontend já existe, mantendo configurações existentes"
+else
+    if [ -f "frontend/app/.env.example" ]; then
+        cp frontend/app/.env.example frontend/app/.env
+        echo "✅ Arquivo .env do frontend criado a partir do .env.example"
+        echo "⚠️  URLs dos microserviços: localhost:8001-8007"
+    else
+        echo "❌ Arquivo frontend/app/.env.example não encontrado"
+        echo "⚠️  Criando arquivo .env com configurações padrão..."
+        cat > frontend/app/.env << 'EOF'
+# Configurações do Frontend - Vite + React
+VITE_API_URL=http://localhost:8080
+VITE_AUTH_SERVICE_URL=http://localhost:8001
+VITE_CATALOG_SERVICE_URL=http://localhost:8002/api/v1
+VITE_CART_SERVICE_URL=http://localhost:8003/api/v1
+VITE_SHIPPING_SERVICE_URL=http://localhost:8004/api/v1
+VITE_PAYMENT_SERVICE_URL=http://localhost:8005/api/v1
+VITE_ORDER_SERVICE_URL=http://localhost:8006/api/v1
+VITE_RECOMMENDATION_SERVICE_URL=http://localhost:8007/api/v1
+EOF
+        echo "✅ Arquivo .env do frontend criado com configurações padrão"
+    fi
+fi
+
+# Instalar dependências do frontend (inclui devDependencies como TypeScript e @types/*)
+echo "📦 Instalando dependências do frontend (frontend/app)..."
 if command -v npm >/dev/null 2>&1; then
-    cd frontend
+    cd frontend/app || { echo "❌ Diretório frontend/app não encontrado"; cd - > /dev/null; }
     if [ -f "package.json" ]; then
-        npm install
-        if [ $? -eq 0 ]; then
-            echo "✅ Dependências do frontend instaladas com sucesso"
+        # prefer deterministic install when lockfile exists
+        if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ]; then
+            echo "➡️  Executando: npm ci"
+            npm ci --unsafe-perm
+            rc=$?
         else
-            echo "❌ Erro ao instalar dependências do frontend"
+            echo "➡️  Executando: npm install"
+            npm install --unsafe-perm
+            rc=$?
+        fi
+
+        if [ $rc -eq 0 ]; then
+            echo "✅ Dependências do frontend instaladas com sucesso"
+            # Run a quick TypeScript build check so devDependencies (typescript, @types/...) are validated
+            if command -v npx >/dev/null 2>&1; then
+                echo "🧪 Executando checagem TypeScript (npx tsc -b)..."
+                npx tsc -b --pretty || echo "⚠️  Checagem TypeScript retornou erro, mas continuando"
+            fi
+        else
+            echo "❌ Erro ao instalar dependências do frontend (exit code $rc)"
             echo "⚠️  Continuando sem as dependências do frontend..."
         fi
     else
-        echo "⚠️  package.json não encontrado no frontend"
+        echo "⚠️  package.json não encontrado em frontend/app"
     fi
-    cd ..
+    cd - > /dev/null
 else
     echo "⚠️  npm não encontrado - pulando instalação do frontend"
     echo "💡 Para instalar Node.js: https://nodejs.org/"
@@ -272,6 +314,9 @@ echo ""
 echo "🌐 Acesse o sistema em: http://localhost:3000"
 echo ""
 echo "📝 Notas importantes:"
+echo "   • Arquivos .env criados:"
+echo "     - Raiz: .env (backend/Docker)"
+echo "     - Frontend: frontend/app/.env (Vite/React)"
 echo "   • Se o Node.js não estiver instalado, o frontend será executado via Docker"
 echo "   • Para desenvolvimento local do frontend, instale Node.js: https://nodejs.org/"
 echo "   • Todos os microserviços funcionam independentemente via Docker"
