@@ -20,7 +20,7 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
-  tipo: string;
+  tipo?: string;
   ativo: boolean;
 };
 
@@ -31,6 +31,10 @@ type AuthState = {
 };
 
 type AuthContextType = AuthState & {
+  // derivados
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  // ações
   login: (data: LoginInput) => Promise<void>;
   register: (data: RegisterInput) => Promise<void>;
   logout: () => void;
@@ -39,6 +43,17 @@ type AuthContextType = AuthState & {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_KEY = "mp_token";
 const USER_KEY = "mp_user";
+
+/** Ajuste as regras conforme sua necessidade */
+const ADMIN_EMAIL_RULES: RegExp[] = [
+  /@admin\b/i, // ex.: fulano@admin ou fulano@admin.com
+];
+
+function inferIsAdmin(user: AuthUser | null): boolean {
+  if (!user?.email) return false;
+  const email = user.email.trim().toLowerCase();
+  return ADMIN_EMAIL_RULES.some((re) => re.test(email));
+}
 
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   children,
@@ -66,18 +81,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const login = useCallback(async (data: LoginInput) => {
     setLoading(true);
     try {
-      const res: LoginResponse = await apiLogin(data);
+      // normaliza e-mail antes de enviar
+      const payload: LoginInput = {
+        ...data,
+        email: data.email.trim().toLowerCase(),
+      };
+
+      const res: LoginResponse = await apiLogin(payload);
 
       const mappedUser: AuthUser = {
         id: String(res.user_id),
         name: res.nome,
-        email: res.email,
-        tipo: res.tipo,
+        email: res.email?.trim().toLowerCase(),
+        tipo: res.tipo ?? undefined,
         ativo: res.ativo,
       };
-
-      console.log("🔑 Login response:", res);
-      console.log("👤 Mapeado para AuthUser:", mappedUser);
 
       persist(mappedUser, res.access_token);
     } finally {
@@ -88,17 +106,21 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   const register = useCallback(async (data: RegisterInput) => {
     setLoading(true);
     try {
-      const res: RegisterResponse = await apiRegister(data);
+      const payload: RegisterInput = {
+        ...data,
+        email: data.email.trim().toLowerCase(),
+      };
+
+      const res: RegisterResponse = await apiRegister(payload);
 
       const mappedUser: AuthUser = {
         id: String(res.user_id),
         name: res.nome,
-        email: res.email,
-        tipo: res.tipo,
+        email: res.email?.trim().toLowerCase(),
+        tipo: res.tipo ?? undefined,
         ativo: res.ativo,
       };
 
-      console.log("🆕 Register response:", res);
       persist(mappedUser, res.access_token);
     } finally {
       setLoading(false);
@@ -109,6 +131,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     persist(null, null);
   }, []);
 
+<<<<<<< HEAD
   // opcional — tenta refresh quando app abre
   // DESABILITADO: estava causando logout ao recarregar
   // useEffect(() => {
@@ -124,16 +147,44 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   //   tryRefresh();
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
+=======
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 404) {
+          console.warn("[Auth] refresh não suportado. Mantendo sessão atual.");
+          return;
+        }
+        if (status === 401) {
+          persist(null, null);
+        }
+        console.warn("[Auth] erro no refresh, sessão mantida:", err);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  // derivados
+  const isAuthenticated = !!token && !!user;
+  const isAdmin = inferIsAdmin(user);
+>>>>>>> b7dc6ec53f2a11a5f3ead1c6cea65c2022b19745
 
   const value = useMemo(
-    () => ({ user, token, loading, login, register, logout }),
-    [user, token, loading, login, register, logout]
+    () => ({
+      user,
+      token,
+      loading,
+      isAuthenticated,
+      isAdmin,
+      login,
+      register,
+      logout,
+    }),
+    [user, token, loading, isAuthenticated, isAdmin, login, register, logout]
   );
-
-  // 🔍 debug visual
-  useEffect(() => {
-    console.log("👤 AuthContext — user atualizado:", user);
-  }, [user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
