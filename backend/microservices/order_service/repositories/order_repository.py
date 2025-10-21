@@ -116,6 +116,7 @@ class OrderRepository:
         skip: int = 0,
         limit: int = 20,
         status: Optional[StatusPedido] = None,
+        usuario_id: Optional[int] = None,
         order_by: str = "data_criacao",
         order_direction: str = "desc"
     ) -> Tuple[List[Pedido], int]:
@@ -137,6 +138,10 @@ class OrderRepository:
         # Apply status filter
         if status:
             query = query.filter(Pedido.status == status)
+        
+        # Apply usuario_id filter
+        if usuario_id:
+            query = query.filter(Pedido.usuario_id == usuario_id)
         
         # Get total count before pagination
         total = query.count()

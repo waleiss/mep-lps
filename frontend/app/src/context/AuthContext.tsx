@@ -9,7 +9,7 @@ import React, {
 import {
   login as apiLogin,
   register as apiRegister,
-  refresh as apiRefresh,
+  // refresh as apiRefresh, // Desabilitado temporariamente
   type LoginInput,
   type RegisterInput,
   type LoginResponse,
@@ -110,19 +110,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   }, []);
 
   // opcional — tenta refresh quando app abre
-  useEffect(() => {
-    const tryRefresh = async () => {
-      if (!token) return;
-      try {
-        const res = await apiRefresh();
-        persist(user, res.access_token);
-      } catch {
-        persist(null, null);
-      }
-    };
-    tryRefresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // DESABILITADO: estava causando logout ao recarregar
+  // useEffect(() => {
+  //   const tryRefresh = async () => {
+  //     if (!token) return;
+  //     try {
+  //       const res = await apiRefresh();
+  //       persist(user, res.access_token);
+  //     } catch {
+  //       persist(null, null);
+  //     }
+  //   };
+  //   tryRefresh();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   const value = useMemo(
     () => ({ user, token, loading, login, register, logout }),

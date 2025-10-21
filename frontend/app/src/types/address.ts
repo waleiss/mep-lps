@@ -30,7 +30,9 @@ export type AddressCreate = {
   principal?: boolean;
 };
 
-export type AddressResponse = Address;
+export type AddressResponse = Address & {
+  id: number; // ID é obrigatório na resposta da API
+};
 
 export type AddressListResponse = {
   enderecos: AddressResponse[];

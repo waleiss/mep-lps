@@ -8,6 +8,7 @@ import {
   processarPagamentoPix, 
   processarPagamentoBoleto 
 } from "../services/paymentApi";
+import { createOrder } from "../services/ordersApi";
 import type { PaymentMethod } from "../types/payment";
 import { 
   gerarBoletoPDF, 
@@ -161,9 +162,31 @@ export default function Checkout() {
       const enderecoResponse = await criarEndereco(enderecoData);
       console.log("Endereço criado:", enderecoResponse);
 
-      // 2. Para criar o pedido, precisaríamos de uma API de orders
-      // Por enquanto, vamos simular um pedido_id
-      const pedidoId = Math.floor(Math.random() * 10000) + 1;
+      if (!enderecoResponse || !enderecoResponse.id) {
+        throw new Error("Erro ao criar endereço: ID não retornado");
+      }
+
+      // 2. Criar pedido no backend
+      const orderData = {
+        usuario_id: parseInt(user.id),
+        endereco_entrega_id: enderecoResponse.id, // Usa o ID do endereço criado
+        valor_frete: shipping,
+        items: items.map(item => ({
+          livro_id: parseInt(item.book.id),
+          quantidade: item.qty,
+          preco_unitario: item.book.price,
+        })),
+        observacoes: `Pagamento: ${payMethod === "card" ? "Cartão" : payMethod === "pix" ? "PIX" : "Boleto"}`,
+      };
+
+      const pedido = await createOrder(orderData);
+      
+      if (!pedido) {
+        throw new Error("Erro ao criar pedido");
+      }
+      
+      const pedidoId = pedido.id;
+      console.log("Pedido criado:", pedido);
 
       // 3. Processar pagamento
       let paymentResponse;

@@ -113,19 +113,22 @@ async def get_all_orders(
     page: int = Query(1, ge=1, description="Número da página"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
     status: Optional[str] = Query(None, description="Filtrar por status"),
+    usuario_id: Optional[int] = Query(None, description="Filtrar por ID do usuário"),
     order_service: OrderService = Depends(get_order_service)
 ):
     """
-    Listar todos os pedidos (Admin)
+    Listar pedidos
     
     - **page**: Número da página (começa em 1)
     - **page_size**: Quantidade de itens por página (máx: 100)
     - **status**: Filtrar por status
+    - **usuario_id**: Filtrar por ID do usuário
     """
     return order_service.get_all_orders(
         page=page,
         page_size=page_size,
-        status=status
+        status=status,
+        usuario_id=usuario_id
     )
 
 
