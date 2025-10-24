@@ -13,6 +13,7 @@ import AdminLayout from "../components/layout/AdminLayout";
 import AdminBooks from "../pages/admin/Books";
 import AdminOrders from "../pages/admin/Orders";
 import AdminProtected from "./AdminProtected";
+import AdminSettings from "../pages/admin/SystemSettings";
 
 export const router = createBrowserRouter([
   {
@@ -83,6 +84,7 @@ export const router = createBrowserRouter([
           { index: true, element: <AdminBooks /> },
           { path: "livros", element: <AdminBooks /> },
           { path: "pedidos", element: <AdminOrders /> },
+          { path: "configuracoes", element: <AdminSettings /> },
         ],
       },
     ],

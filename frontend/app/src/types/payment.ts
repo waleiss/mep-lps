@@ -2,6 +2,8 @@
 
 export type PaymentMethod = "card" | "pix" | "boleto";
 
+
+
 export type PaymentStatus = 
   | "pendente" 
   | "processando" 
@@ -55,4 +57,9 @@ export type PaymentResponse = {
   codigo_barras?: string; // Para Boleto
   linha_digitavel?: string; // Para Boleto
 };
+
+
+export const ALL_PAYMENT_METHODS: readonly PaymentMethod[] = [
+ "card", "pix", "boleto"
+];
 
