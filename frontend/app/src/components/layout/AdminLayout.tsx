@@ -68,6 +68,19 @@ export default function AdminLayout() {
             >
               Pedidos
             </NavLink>
+
+            <NavLink
+              to="/admin/configuracoes"
+              className={({ isActive }) =>
+                `py-3 px-2 text-sm font-medium transition border-b-2 ${
+                  isActive
+                    ? "border-indigo-600 text-indigo-700"
+                    : "border-transparent text-slate-600 hover:text-indigo-600"
+                }`
+              }
+            >
+              Configurações
+            </NavLink>
           </div>
         </nav>
       </header>

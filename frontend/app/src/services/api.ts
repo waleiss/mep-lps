@@ -2,9 +2,9 @@ import axios from "axios";
 import type { Book } from "../types/book";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1",
 });
-
+ 
 // Instância para o catalog service
 export const catalogApi = axios.create({
   baseURL: import.meta.env.VITE_CATALOG_SERVICE_URL || "http://localhost:8002/api/v1",

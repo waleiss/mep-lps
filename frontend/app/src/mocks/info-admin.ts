@@ -8,6 +8,15 @@ export type Categoria =
 
 export type Condicao = "NOVO" | "USADO" | "SEMI_NOVO";
 
+export const ALL_CATEGORIES: readonly Categoria[] = [
+  "FICCAO",
+  "NAO_FICCAO",
+  "TECNICO",
+  "ACADEMICO",
+  "INFANTIL",
+  "OUTROS",
+];
+
 export type Livro = {
   id: number;
   titulo: string;
@@ -32,7 +41,11 @@ export type Pedido = {
 export const MOCK_LIVROS: Livro[] = [
   { id: 1, titulo: "Dom Casmurro", autor: "Machado de Assis", categoria: "FICCAO", condicao: "NOVO", preco: 39.9, estoque: 12 },
   { id: 2, titulo: "Capitães da Areia", autor: "Jorge Amado", categoria: "FICCAO", condicao: "USADO", preco: 24.5, estoque: 4 },
+  { id: 3, titulo: "Introdução ao Node.js", autor: "Fulano", categoria: "TECNICO", condicao: "NOVO", preco: 89.0, estoque: 8 },
+  { id: 4, titulo: "Metodologia Científica", autor: "Beltrano", categoria: "ACADEMICO", condicao: "NOVO", preco: 59.0, estoque: 5 },
+  { id: 5, titulo: "Histórias para Dormir", autor: "Ciclano", categoria: "INFANTIL", condicao: "SEMI_NOVO", preco: 25.0, estoque: 10 },
 ];
+
 
 export const MOCK_PEDIDOS: Pedido[] = [
   {
