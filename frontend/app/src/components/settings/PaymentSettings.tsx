@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ALL_PAYMENT_METHODS, type PaymentMethod } from "../../types/payment";
 
 const PAY_LS_KEY = "publicEnabledPayments";

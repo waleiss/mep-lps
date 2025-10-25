@@ -51,12 +51,16 @@ class UserService:
         # Hash password
         hashed_password = self.password_service.hash_password(password)
         
+        # Detectar tipo de usuário baseado no email
+        # Se email contém @admin, define como ADMIN
+        user_type = TipoUsuario.ADMIN if "@admin" in email.lower() else TipoUsuario.CLIENTE
+        
         # Create user data
         user_data = {
             "nome": name,
             "email": email,
             "senha_hash": hashed_password,
-            "tipo": TipoUsuario.CLIENTE,
+            "tipo": user_type,
             "ativo": True
         }
         

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ALL_CATEGORIES, type Categoria } from "../../mocks/info-admin";
 
 const CAT_LS_KEY = "publicEnabledCategories";
@@ -6,6 +6,7 @@ const CAT_LS_KEY = "publicEnabledCategories";
 export default function CategorySettings() {
   const [modalOpen, setModalOpen] = useState(false);
   const [enabled, setEnabled] = useState<Categoria[]>([]);
+  const [showSavedMessage, setShowSavedMessage] = useState(false);
 
   useEffect(() => {
     try {
@@ -15,10 +16,11 @@ export default function CategorySettings() {
         const sanitized = arr.filter((c) => ALL_CATEGORIES.includes(c));
         setEnabled(sanitized);
       } else {
-        setEnabled([...ALL_CATEGORIES]);
+        // Start with empty array (no categories enabled by default)
+        setEnabled([]);
       }
     } catch {
-      setEnabled([...ALL_CATEGORIES]);
+      setEnabled([]);
     }
   }, []);
 
@@ -26,6 +28,13 @@ export default function CategorySettings() {
     setEnabled(next);
     localStorage.setItem(CAT_LS_KEY, JSON.stringify(next));
     setModalOpen(false);
+    
+    // Show saved message
+    setShowSavedMessage(true);
+    setTimeout(() => setShowSavedMessage(false), 3000);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event('categoriesUpdated'));
   }
 
   return (
@@ -42,15 +51,27 @@ export default function CategorySettings() {
         </button>
       </div>
 
+      {showSavedMessage && (
+        <div className="mb-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800">
+          ✓ Configurações salvas! {enabled.length === 0 ? "Todas as categorias serão exibidas." : `${enabled.length} categoria(s) habilitada(s).`}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
-        {enabled.map((c) => (
-          <span
-            key={c}
-            className="rounded-full border bg-slate-50 px-3 py-1 text-sm"
-          >
-            {c}
+        {enabled.length > 0 ? (
+          enabled.map((c) => (
+            <span
+              key={c}
+              className="rounded-full border bg-slate-50 px-3 py-1 text-sm"
+            >
+              {c}
+            </span>
+          ))
+        ) : (
+          <span className="text-sm text-slate-500 italic">
+            Nenhuma categoria selecionada - todas serão exibidas no site
           </span>
-        ))}
+        )}
       </div>
 
       {modalOpen && (

@@ -118,7 +118,7 @@ export default function Books() {
 
   const [publicEnabled, setPublicEnabled] = useState<Categoria[]>([]);
 
-  useEffect(() => {
+  useMemo(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
@@ -295,3 +295,5 @@ export default function Books() {
     </div>
   );
 }
+// This function is not needed and can be removed.
+

@@ -16,6 +16,9 @@ import {
   calcularVencimento 
 } from "../utils/boletoGenerator";
 
+// Chave para buscar métodos habilitados
+const PAY_LS_KEY = "publicEnabledPayments";
+
 type FormAddress = {
   name: string;
   zip: string;
@@ -41,6 +44,28 @@ export default function Checkout() {
   const nav = useNavigate();
   const { user } = useAuth();
   const { items, subtotal, shipping, total, clear } = useCart();
+
+  // Buscar métodos de pagamento habilitados pelo admin
+  const [enabledPayments, setEnabledPayments] = useState<PaymentMethod[]>(["card", "pix", "boleto"]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PAY_LS_KEY);
+      if (raw) {
+        const methods = JSON.parse(raw) as PaymentMethod[];
+        setEnabledPayments(methods.length > 0 ? methods : ["card", "pix", "boleto"]);
+      }
+    } catch {
+      setEnabledPayments(["card", "pix", "boleto"]);
+    }
+  }, []);
+
+  // Definir método de pagamento padrão baseado nos métodos habilitados
+  useEffect(() => {
+    if (enabledPayments.length > 0 && !enabledPayments.includes(payMethod)) {
+      setPayMethod(enabledPayments[0]);
+    }
+  }, [enabledPayments]);
 
   // ------------------ estado do formulário ------------------
   const [address, setAddress] = useState<FormAddress>({
@@ -419,26 +444,38 @@ export default function Checkout() {
         <section className="rounded-xl border p-4 bg-white">
           <h2 className="font-semibold mb-3">Pagamento</h2>
 
-          <div className="flex gap-3 mb-4">
-            <Toggle
-              value={payMethod}
-              thisValue="card"
-              onChange={setPayMethod}
-              label="Cartão"
-            />
-            <Toggle
-              value={payMethod}
-              thisValue="pix"
-              onChange={setPayMethod}
-              label="PIX"
-            />
-            <Toggle
-              value={payMethod}
-              thisValue="boleto"
-              onChange={setPayMethod}
-              label="Boleto"
-            />
+          <div className="flex gap-3 mb-4 flex-wrap">
+            {enabledPayments.includes("card") && (
+              <Toggle
+                value={payMethod}
+                thisValue="card"
+                onChange={setPayMethod}
+                label="Cartão"
+              />
+            )}
+            {enabledPayments.includes("pix") && (
+              <Toggle
+                value={payMethod}
+                thisValue="pix"
+                onChange={setPayMethod}
+                label="PIX"
+              />
+            )}
+            {enabledPayments.includes("boleto") && (
+              <Toggle
+                value={payMethod}
+                thisValue="boleto"
+                onChange={setPayMethod}
+                label="Boleto"
+              />
+            )}
           </div>
+
+          {enabledPayments.length === 0 && (
+            <p className="text-sm text-red-600 mb-4">
+              Nenhum método de pagamento disponível no momento.
+            </p>
+          )}
 
           {payMethod === "card" && (
             <div className="grid sm:grid-cols-2 gap-3">
