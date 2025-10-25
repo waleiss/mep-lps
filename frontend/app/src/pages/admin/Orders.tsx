@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { type Pedido, MOCK_PEDIDOS } from "../../mocks/info-admin";
 
 export default function Orders() {

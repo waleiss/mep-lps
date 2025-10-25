@@ -2,7 +2,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  // useEffect,
   useMemo,
   useState,
 } from "react";
@@ -131,7 +131,6 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     persist(null, null);
   }, []);
 
-<<<<<<< HEAD
   // opcional — tenta refresh quando app abre
   // DESABILITADO: estava causando logout ao recarregar
   // useEffect(() => {
@@ -147,30 +146,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   //   tryRefresh();
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
-=======
-  useEffect(() => {
-    if (!token) return;
-    (async () => {
-      try {
-      } catch (err: any) {
-        const status = err?.response?.status;
-        if (status === 404) {
-          console.warn("[Auth] refresh não suportado. Mantendo sessão atual.");
-          return;
-        }
-        if (status === 401) {
-          persist(null, null);
-        }
-        console.warn("[Auth] erro no refresh, sessão mantida:", err);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
 
   // derivados
   const isAuthenticated = !!token && !!user;
   const isAdmin = inferIsAdmin(user);
->>>>>>> b7dc6ec53f2a11a5f3ead1c6cea65c2022b19745
 
   const value = useMemo(
     () => ({

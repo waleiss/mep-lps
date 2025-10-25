@@ -1,9 +1,8 @@
-    allow_origins=["*"],  # In productio# Recommendation Schemas - Pydantic models for request/response validation
+# Recommendation Schemas - Pydantic models for request/response validation
 # Defines data structures for API endpoints
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
 
 
 class BookRecommendationResponse(BaseModel):

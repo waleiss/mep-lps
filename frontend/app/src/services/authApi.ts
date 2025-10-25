@@ -1,8 +1,13 @@
 import axios from "axios";
 
+const RAW_AUTH_URL = import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8001";
+const BASE_AUTH_URL = RAW_AUTH_URL.endsWith("/api/v1")
+  ? RAW_AUTH_URL
+  : `${RAW_AUTH_URL.replace(/\/+$/, "")}/api/v1`;
+
 export const authApi = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:8001", 
-  withCredentials: false, 
+  baseURL: BASE_AUTH_URL,
+  withCredentials: false,
 });
 
 export type LoginInput = {

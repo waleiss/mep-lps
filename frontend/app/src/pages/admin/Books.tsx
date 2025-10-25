@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   type Livro,
   type Categoria,
@@ -10,8 +10,8 @@ import BookFormModal from "../../components/book/BookFormModal";
 export default function Books() {
   const [data, setData] = useState<Livro[]>(() => MOCK_LIVROS);
   const [query, setQuery] = useState("");
-  const [categoria, setCategoria] = useState<"" | Categoria>("");
-  const [condicao, setCondicao] = useState<"" | Condicao>("");
+  const [categoria] = useState<"" | Categoria>("");
+  const [condicao] = useState<"" | Condicao>("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Livro | null>(null);
 
