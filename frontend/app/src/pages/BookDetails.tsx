@@ -9,24 +9,67 @@ import BookCard from "../components/book/BookCard";
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
 
+const CAT_LS_KEY = "publicEnabledCategories";
+
 export default function BookDetails() {
   const { id } = useParams<{ id: string }>();
   const [books, setBooks] = useState<Book[]>([]);
+  const [enabledCategories, setEnabledCategories] = useState<string[]>([]);
   const { add } = useCart();
   const { ids: favIds, toggle } = useFavorites();
+
+  // Load enabled categories from localStorage
+  useEffect(() => {
+    const loadCategories = () => {
+      try {
+        const raw = localStorage.getItem(CAT_LS_KEY);
+        if (raw) {
+          const arr = JSON.parse(raw) as string[];
+          setEnabledCategories(arr);
+        } else {
+          setEnabledCategories([]);
+        }
+      } catch {
+        setEnabledCategories([]);
+      }
+    };
+
+    loadCategories();
+
+    // Listen for storage changes
+    window.addEventListener('storage', loadCategories);
+    window.addEventListener('categoriesUpdated', loadCategories);
+
+    return () => {
+      window.removeEventListener('storage', loadCategories);
+      window.removeEventListener('categoriesUpdated', loadCategories);
+    };
+  }, []);
 
   useEffect(() => {
     listBooks().then(setBooks);
   }, []);
 
+  // Filter books by enabled categories
+  const filteredBooks = useMemo(() => {
+    // Convert enabled categories to lowercase for comparison
+    const enabledLower = enabledCategories.map(c => c.toLowerCase());
+    
+    return books.filter((b) => {
+      if (!b.category) return false;
+      // Compare case-insensitive
+      return enabledLower.includes(b.category.toLowerCase());
+    });
+  }, [books, enabledCategories]);
+
   const book = useMemo(
-    () => books.find((b) => b.id === id || (b as any).slug === id),
-    [books, id]
+    () => filteredBooks.find((b) => b.id === id || (b as any).slug === id),
+    [filteredBooks, id]
   );
 
   const recommended = useMemo(
-    () => books.filter((b) => b.id !== book?.id).slice(0, 4),
-    [books, book?.id]
+    () => filteredBooks.filter((b) => b.id !== book?.id).slice(0, 4),
+    [filteredBooks, book?.id]
   );
 
   if (!book) {

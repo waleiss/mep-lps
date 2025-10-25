@@ -5,14 +5,29 @@ import logo from "../assets/logo.svg";
 
 export default function Login() {
   const nav = useNavigate();
-  const { login, loading } = useAuth();
+  const { login, loading, isAdmin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    await login({ email, password });
-    nav("/");
+    try {
+      await login({ email, password });
+      
+      // Redirecionar para /admin se o usuário for administrador
+      // Verifica se o email contém padrões admin ou aguarda isAdmin atualizar
+      const isAdminEmail = email.toLowerCase().includes('@admin') || 
+                          email.toLowerCase().startsWith('admin@');
+      
+      if (isAdminEmail || isAdmin) {
+        nav("/admin");
+      } else {
+        nav("/");
+      }
+    } catch (error) {
+      console.error("Erro no login:", error);
+      // Erro já é tratado pelo AuthContext
+    }
   }
 
   return (

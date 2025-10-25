@@ -46,12 +46,17 @@ const USER_KEY = "mp_user";
 
 /** Ajuste as regras conforme sua necessidade */
 const ADMIN_EMAIL_RULES: RegExp[] = [
-  /@admin\b/i, // ex.: fulano@admin ou fulano@admin.com
+  /@admin\b/i,      // ex.: fulano@admin.com
+  /^admin@/i,       // ex.: admin@mundopalavras.com
+  /\.admin@/i,      // ex.: user.admin@email.com
 ];
 
 function inferIsAdmin(user: AuthUser | null): boolean {
   if (!user?.email) return false;
   const email = user.email.trim().toLowerCase();
+  // Também verifica se o tipo do usuário é explicitamente 'admin' ou 'ADMIN'
+  if (user.tipo?.toLowerCase() === 'admin') return true;
+  // Verifica regex de email
   return ADMIN_EMAIL_RULES.some((re) => re.test(email));
 }
 

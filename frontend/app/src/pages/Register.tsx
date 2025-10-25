@@ -30,11 +30,25 @@ export default function Register() {
 
       console.log("Registro bem-sucedido:", res);
 
-      // Se a API já retornar token/usuário, você pode salvar aqui:
-      // localStorage.setItem("mp_token", res.access_token ?? "");
-      // localStorage.setItem("mp_user", JSON.stringify(res.user ?? null));
+      // Salvar token e usuário no localStorage
+      localStorage.setItem("mp_token", res.access_token ?? "");
+      localStorage.setItem("mp_user", JSON.stringify({
+        id: String(res.user_id),
+        name: res.nome,
+        email: res.email,
+        tipo: res.tipo,
+        ativo: res.ativo
+      }));
 
-      nav("/login"); // ou nav("/") se já logar automaticamente
+      // Redirecionar para /admin se for admin, senão para home
+      const isAdminEmail = email.toLowerCase().includes('@admin') || 
+                          email.toLowerCase().startsWith('admin@');
+      
+      if (isAdminEmail || res.tipo?.toLowerCase() === 'admin') {
+        nav("/admin");
+      } else {
+        nav("/");
+      }
     } catch (err: any) {
       // Mostra erro legível
       const msg =
