@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     debug: bool = True
     
     # API Configuration
+    app_name: str = "Mundo Palavras Recommendation Service"
     api_prefix: str = "/api/v1"
     docs_url: str = "/docs"
     redoc_url: str = "/redoc"
