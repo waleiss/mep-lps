@@ -9,6 +9,7 @@ import {
   processarPagamentoBoleto 
 } from "../services/paymentApi";
 import { createOrder } from "../services/ordersApi";
+import { getPublicSettings } from "../services/api";
 import type { PaymentMethod } from "../types/payment";
 import { 
   gerarBoletoPDF, 
@@ -16,8 +17,7 @@ import {
   calcularVencimento 
 } from "../utils/boletoGenerator";
 
-// Chave para buscar métodos habilitados
-const PAY_LS_KEY = "publicEnabledPayments";
+// Métodos de pagamento habilitados pelo admin (config pública)
 
 type FormAddress = {
   name: string;
@@ -43,21 +43,22 @@ const money = (v: number) =>
 export default function Checkout() {
   const nav = useNavigate();
   const { user } = useAuth();
-  const { items, subtotal, shipping, total, clear } = useCart();
+  const { items, subtotal, shipping, total, clear, remove, inc, dec } = useCart();
 
-  // Buscar métodos de pagamento habilitados pelo admin
+  // Buscar métodos de pagamento habilitados pelo admin (cross-browser via backend)
   const [enabledPayments, setEnabledPayments] = useState<PaymentMethod[]>(["card", "pix", "boleto"]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PAY_LS_KEY);
-      if (raw) {
-        const methods = JSON.parse(raw) as PaymentMethod[];
-        setEnabledPayments(methods.length > 0 ? methods : ["card", "pix", "boleto"]);
-      }
-    } catch {
-      setEnabledPayments(["card", "pix", "boleto"]);
-    }
+    getPublicSettings()
+      .then((s) => {
+        const methods = s.enabledPayments as PaymentMethod[] | null | undefined;
+        if (methods == null) {
+          setEnabledPayments(["card", "pix", "boleto"]);
+        } else {
+          setEnabledPayments(methods);
+        }
+      })
+      .catch(() => setEnabledPayments(["card", "pix", "boleto"]));
   }, []);
 
   // Definir método de pagamento padrão baseado nos métodos habilitados
@@ -358,7 +359,7 @@ export default function Checkout() {
         {/* Itens do carrinho */}
         <ul className="divide-y rounded-xl border bg-white">
           {items.map((it) => (
-            <li key={it.book.id} className="p-4 flex gap-4">
+            <li key={it.book.id} className="p-4 flex gap-4 items-center">
               <img
                 src={it.book.cover}
                 className="w-16 h-16 rounded-lg object-cover"
@@ -367,10 +368,37 @@ export default function Checkout() {
                 <div className="font-semibold">{it.book.title}</div>
                 <div className="text-sm text-slate-600">{it.book.author}</div>
               </div>
-              <div className="text-sm">x{it.qty}</div>
-              <div className="font-semibold">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => dec(it.book.id)}
+                  className="h-7 w-7 grid place-items-center rounded border text-slate-700 hover:bg-slate-50"
+                  aria-label="Diminuir quantidade"
+                >
+                  −
+                </button>
+                <div className="w-8 text-center select-none">{it.qty}</div>
+                <button
+                  type="button"
+                  onClick={() => inc(it.book.id)}
+                  className="h-7 w-7 grid place-items-center rounded border text-slate-700 hover:bg-slate-50"
+                  aria-label="Aumentar quantidade"
+                >
+                  +
+                </button>
+              </div>
+              <div className="font-semibold mr-2">
                 {money(it.book.price * it.qty)}
               </div>
+              <button
+                type="button"
+                onClick={() => remove(it.book.id)}
+                className="ml-auto rounded-lg border px-2 py-1 text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                title="Remover do carrinho"
+                aria-label={`Remover ${it.book.title} do carrinho`}
+              >
+                🗑️
+              </button>
             </li>
           ))}
         </ul>

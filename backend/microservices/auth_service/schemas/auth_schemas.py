@@ -52,6 +52,7 @@ class UserResponse(BaseModel):
     nome: str
     tipo: str
     ativo: bool
+    telefone: Optional[str] = None
 
 
 class LoginResponse(BaseModel):
@@ -76,3 +77,25 @@ class RegisterResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
+
+class UpdateUserRequest(BaseModel):
+    """Request para atualização parcial do usuário atual"""
+    telefone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    nome: Optional[str] = None
+
+    @validator('nome')
+    def validate_nome(cls, v):
+        if v is None:
+            return v
+        if len(v.strip()) < 2:
+            raise ValueError('Nome deve ter pelo menos 2 caracteres')
+        return v.strip()
+
+
+class ChangePasswordRequest(BaseModel):
+    """Request para troca de senha do usuário atual"""
+    current_password: str
+    new_password: str
+    new_password_confirmation: str

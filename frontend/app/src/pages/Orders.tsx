@@ -13,6 +13,7 @@ export default function Orders() {
   const [orders, setOrders] = useState<OrderWithBooks[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<number | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,13 +56,6 @@ export default function Orders() {
   }, [user]);
 
   const handleCancelOrder = async (orderId: number) => {
-    // Confirmação antes de cancelar
-    const confirmed = window.confirm(
-      "Tem certeza que deseja cancelar este pedido?\n\nEsta ação não pode ser desfeita."
-    );
-    
-    if (!confirmed) return;
-
     setCancelling(orderId);
     try {
       await cancelOrder(orderId);
@@ -74,8 +68,6 @@ export default function Orders() {
             : order
         )
       );
-      
-      alert("Pedido cancelado com sucesso!");
     } catch (error: any) {
       console.error("Erro ao cancelar pedido:", error);
       alert(
@@ -84,6 +76,7 @@ export default function Orders() {
       );
     } finally {
       setCancelling(null);
+      setConfirmCancelId(null);
     }
   };
 
@@ -148,7 +141,7 @@ export default function Orders() {
                   {/* Botão de cancelar - só aparece se não estiver cancelado ou entregue */}
                   {o.status !== 'cancelado' && o.status !== 'entregue' && o.status !== 'devolvido' && (
                     <button
-                      onClick={() => handleCancelOrder(o.id)}
+                      onClick={() => setConfirmCancelId(o.id)}
                       disabled={cancelling === o.id}
                       className="px-3 py-1 text-xs rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
@@ -186,6 +179,37 @@ export default function Orders() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Modal de confirmação estilizado para cancelamento */}
+      {confirmCancelId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-xl border">
+            <div className="px-5 py-4 border-b">
+              <h4 className="text-lg font-semibold text-slate-800">Confirmar cancelamento</h4>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-slate-700 mb-2">Tem certeza que deseja cancelar este pedido?</p>
+              <p className="text-slate-500 text-sm">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="px-5 py-3 border-t flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmCancelId(null)}
+                disabled={cancelling === confirmCancelId}
+                className="px-4 py-2 rounded-lg border hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={() => handleCancelOrder(confirmCancelId)}
+                disabled={cancelling === confirmCancelId}
+                className={`px-4 py-2 rounded-lg text-white ${cancelling === confirmCancelId ? 'bg-slate-400 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700'}`}
+              >
+                {cancelling === confirmCancelId ? 'Cancelando...' : 'Confirmar cancelamento'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

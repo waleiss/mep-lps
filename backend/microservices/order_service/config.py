@@ -29,10 +29,11 @@ class Settings(BaseSettings):
     max_page_size: int = 100
     
     # External Services URLs
-    catalog_service_url: str = "http://localhost:8002/api/v1"
-    cart_service_url: str = "http://localhost:8003/api/v1"
-    payment_service_url: str = "http://localhost:8005/api/v1"
-    shipping_service_url: str = "http://localhost:8004/api/v1"
+    auth_service_url: str = "http://auth-service:8001/api/v1"
+    catalog_service_url: str = "http://catalog-service:8002/api/v1"
+    cart_service_url: str = "http://cart-service:8003/api/v1"
+    payment_service_url: str = "http://payment-service:8005/api/v1"
+    shipping_service_url: str = "http://shipping-service:8004/api/v1"
     
     # Order Number Configuration
     order_number_prefix: str = "MP"  # Mundo em Palavras

@@ -39,6 +39,7 @@ export interface Order {
   data_entrega_prevista?: string;
   data_entrega_realizada?: string;
   items?: OrderItem[];
+  usuario_info?: any; // Info do usuário (dict)
   endereco_entrega?: any; // Detalhes do endereço (dict)
   pagamento_info?: any; // Info do pagamento (dict)
 }
@@ -102,6 +103,19 @@ export async function cancelOrder(orderId: number): Promise<Order> {
     return response.data;
   } catch (error) {
     console.error(`Erro ao cancelar pedido ${orderId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Atualiza o status de um pedido (admin)
+ */
+export async function updateOrderStatus(orderId: number, status: string): Promise<Order> {
+  try {
+    const response = await ordersApi.patch(`/pedidos/${orderId}/status`, { status });
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao atualizar status do pedido ${orderId} -> ${status}:`, error);
     throw error;
   }
 }

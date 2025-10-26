@@ -71,6 +71,7 @@ class OrderResponse(BaseModel):
     items: List[OrderItemResponse]
     
     # Additional details
+    usuario_info: Optional[dict] = None
     endereco_entrega: Optional[dict] = None
     pagamento_info: Optional[dict] = None
     

@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Book } from "../types/book";
+import type { PaymentMethod } from "../types/payment";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api/v1",
@@ -86,4 +87,26 @@ export async function getBook(id: string): Promise<Book | undefined> {
     console.error(`Erro ao buscar livro ${id}:`, error);
     return undefined;
   }
+}
+
+// ---------------- Site-wide Public Settings ----------------
+
+export type PublicSettings = {
+  enabledCategories?: string[] | null;
+  enabledPayments?: PaymentMethod[] | null;
+};
+
+export async function getPublicSettings(): Promise<PublicSettings> {
+  try {
+    const res = await catalogApi.get("/public-settings");
+    return res.data || {};
+  } catch (err) {
+    console.error("Erro ao buscar configurações públicas:", err);
+    return {};
+  }
+}
+
+export async function updatePublicSettings(settings: PublicSettings): Promise<PublicSettings> {
+  const res = await catalogApi.put("/public-settings", settings);
+  return res.data;
 }

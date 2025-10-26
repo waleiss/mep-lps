@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 import httpx
+import asyncio
 
 from models import Pedido, ItemPedido, StatusPedido
 from repositories.order_repository import OrderRepository
@@ -49,7 +50,7 @@ class OrderService:
         
         return item_dict
     
-    def _serialize_order(self, order: Pedido, include_details: bool = False) -> Dict[str, Any]:
+    async def _serialize_order(self, order: Pedido, include_details: bool = False) -> Dict[str, Any]:
         """
         Serialize order to dictionary
         
@@ -82,9 +83,30 @@ class OrderService:
         
         # Add external details if requested
         if include_details:
-            # TODO: Fetch address details from shipping service
-            # TODO: Fetch payment details from payment service
-            pass
+            # Fetch user details
+            user_details = await self._fetch_user_details(order.usuario_id)
+            if user_details:
+                order_dict["usuario_info"] = {
+                    "nome": user_details.get("nome"),
+                    "email": user_details.get("email"),
+                    # inclui telefone quando disponível (exibido no admin)
+                    "telefone": user_details.get("telefone"),
+                }
+            
+            # Fetch address details
+            address_details = await self._fetch_address_details(order.endereco_entrega_id, order.usuario_id)
+            if address_details:
+                order_dict["endereco_entrega"] = address_details
+            
+            # Fetch payment details
+            payment_details = await self._fetch_payment_details(order.id)
+            if payment_details:
+                order_dict["pagamento_info"] = {
+                    "metodo_pagamento": payment_details.get("forma_pagamento"),
+                    "status": payment_details.get("status"),
+                    "valor": payment_details.get("valor"),
+                    "data_processamento": payment_details.get("data_processamento")
+                }
         
         return order_dict
     
@@ -108,6 +130,78 @@ class OrderService:
                     return response.json()
         except Exception as e:
             print(f"Error fetching book details: {e}")
+        return None
+    
+    async def _fetch_user_details(self, usuario_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Fetch user details from auth service
+        
+        Args:
+            usuario_id: User ID
+            
+        Returns:
+            User details dictionary or None
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{settings.auth_service_url}/users/{usuario_id}",
+                    timeout=5.0
+                )
+                if response.status_code == 200:
+                    return response.json()
+        except Exception as e:
+            print(f"Error fetching user details: {e}")
+        return None
+    
+    async def _fetch_address_details(self, endereco_id: int, usuario_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Fetch address details from shipping service
+        
+        Args:
+            endereco_id: Address ID
+            usuario_id: User ID
+            
+        Returns:
+            Address details dictionary or None
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{settings.shipping_service_url}/enderecos/{endereco_id}",
+                    params={"usuario_id": usuario_id},
+                    timeout=5.0
+                )
+                if response.status_code == 200:
+                    return response.json()
+        except Exception as e:
+            print(f"Error fetching address details: {e}")
+        return None
+    
+    async def _fetch_payment_details(self, pedido_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Fetch payment details from payment service
+        
+        Args:
+            pedido_id: Order ID
+            
+        Returns:
+            Payment details dictionary or None
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{settings.payment_service_url}/pagamento/pedido/{pedido_id}/status",
+                    timeout=5.0
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    # Return the first payment if available
+                    pagamentos = data.get("pagamentos", [])
+                    if pagamentos:
+                        return pagamentos[0]
+        except Exception as e:
+            print(f"Error fetching payment details: {e}")
         return None
     
     async def _fetch_cart_items(self, usuario_id: int) -> List[Dict[str, Any]]:
@@ -184,7 +278,7 @@ class OrderService:
             print(f"Error calculating shipping: {e}")
         return {"valor": 0, "prazo_dias": 7}
     
-    def create_order(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_order(self, order_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new order
         
@@ -237,7 +331,7 @@ class OrderService:
         # Create order with items
         order = self.order_repo.create_order(order_create_data, items_data)
         
-        return self._serialize_order(order, include_details=True)
+        return await self._serialize_order(order, include_details=True)
     
     async def create_order_from_cart(
         self,
@@ -299,9 +393,9 @@ class OrderService:
             "items": items_data
         }
         
-        return self.create_order(order_data)
+        return await self.create_order(order_data)
     
-    def get_order_by_id(self, order_id: int) -> Dict[str, Any]:
+    async def get_order_by_id(self, order_id: int) -> Dict[str, Any]:
         """
         Get order by ID
         
@@ -321,9 +415,9 @@ class OrderService:
                 detail="Pedido não encontrado"
             )
         
-        return self._serialize_order(order, include_details=True)
+        return await self._serialize_order(order, include_details=True)
     
-    def get_order_by_numero(self, numero_pedido: str) -> Dict[str, Any]:
+    async def get_order_by_numero(self, numero_pedido: str) -> Dict[str, Any]:
         """
         Get order by order number
         
@@ -343,9 +437,9 @@ class OrderService:
                 detail="Pedido não encontrado"
             )
         
-        return self._serialize_order(order, include_details=True)
+        return await self._serialize_order(order, include_details=True)
     
-    def get_user_orders(
+    async def get_user_orders(
         self,
         usuario_id: int,
         page: int = 1,
@@ -384,14 +478,14 @@ class OrderService:
             status=status_enum
         )
         
-        # Serialize orders
-        orders_data = [self._serialize_order(order) for order in orders]
+        # Serialize orders (without details for list view)
+        orders_data = await asyncio.gather(*[self._serialize_order(order, include_details=False) for order in orders])
         
         # Calculate pagination info
         total_pages = (total + page_size - 1) // page_size
         
         return {
-            "items": orders_data,
+            "items": list(orders_data),
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -400,7 +494,7 @@ class OrderService:
             "has_previous": page > 1
         }
     
-    def update_order_status(self, order_id: int, status: str) -> Dict[str, Any]:
+    async def update_order_status(self, order_id: int, status: str) -> Dict[str, Any]:
         """
         Update order status
         
@@ -430,9 +524,9 @@ class OrderService:
                 detail="Pedido não encontrado"
             )
         
-        return self._serialize_order(order, include_details=True)
+        return await self._serialize_order(order, include_details=True)
     
-    def get_all_orders(
+    async def get_all_orders(
         self,
         page: int = 1,
         page_size: int = 20,
@@ -470,14 +564,14 @@ class OrderService:
             usuario_id=usuario_id
         )
         
-        # Serialize orders
-        orders_data = [self._serialize_order(order) for order in orders]
+        # Serialize orders (without details for list view)
+        orders_data = await asyncio.gather(*[self._serialize_order(order, include_details=False) for order in orders])
         
         # Calculate pagination info
         total_pages = (total + page_size - 1) // page_size
         
         return {
-            "items": orders_data,
+            "items": list(orders_data),
             "total": total,
             "page": page,
             "page_size": page_size,
