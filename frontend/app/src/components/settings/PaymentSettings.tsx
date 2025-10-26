@@ -1,30 +1,26 @@
 import { useEffect, useState } from "react";
 import { ALL_PAYMENT_METHODS, type PaymentMethod } from "../../types/payment";
-
-const PAY_LS_KEY = "publicEnabledPayments";
+import { getPublicSettings, updatePublicSettings } from "../../services/api";
 
 export default function PaymentSettings() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [enabled, setEnabled] = useState<PaymentMethod[]>([]);
+  // null => não configurado (mostrar todos). [] => nenhum disponível
+  const [enabled, setEnabled] = useState<PaymentMethod[] | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PAY_LS_KEY);
-      if (raw) {
-        const arr = JSON.parse(raw) as PaymentMethod[];
-        const sanitized = arr.filter((m) => ALL_PAYMENT_METHODS.includes(m));
-        setEnabled(sanitized);
-      } else {
-        setEnabled([...ALL_PAYMENT_METHODS]);
-      }
-    } catch {
-      setEnabled([...ALL_PAYMENT_METHODS]);
-    }
+    getPublicSettings()
+      .then((data) => {
+        const methods = data.enabledPayments as PaymentMethod[] | null | undefined;
+        if (methods == null) setEnabled(null); else setEnabled(methods.filter((m) => ALL_PAYMENT_METHODS.includes(m)));
+      })
+      .catch(() => setEnabled(null));
   }, []);
 
   function save(next: PaymentMethod[]) {
     setEnabled(next);
-    localStorage.setItem(PAY_LS_KEY, JSON.stringify(next));
+    updatePublicSettings({ enabledPayments: next }).catch((e) =>
+      console.error("Falha ao salvar métodos de pagamento:", e)
+    );
     setModalOpen(false);
   }
 
@@ -43,7 +39,7 @@ export default function PaymentSettings() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {enabled.map((m) => (
+        {(enabled ?? ALL_PAYMENT_METHODS).map((m) => (
           <span
             key={m}
             className="rounded-full border bg-slate-50 px-3 py-1 text-sm"
@@ -59,7 +55,7 @@ export default function PaymentSettings() {
         <Modal
           title="Selecionar métodos de pagamento"
           options={ALL_PAYMENT_METHODS}
-          selected={enabled}
+          selected={enabled ?? [...ALL_PAYMENT_METHODS]}
           onClose={() => setModalOpen(false)}
           onSave={save}
         />

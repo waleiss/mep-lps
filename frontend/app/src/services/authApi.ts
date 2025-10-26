@@ -10,6 +10,13 @@ export const authApi = axios.create({
   withCredentials: false,
 });
 
+// Adiciona token nas requisições autenticadas
+authApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("mp_token");
+  if (token) config.headers = { ...(config.headers || {}), Authorization: `Bearer ${token}` } as any;
+  return config;
+});
+
 export type LoginInput = {
   email: string;
   password: string;
@@ -47,4 +54,43 @@ export async function register(data: RegisterInput): Promise<RegisterResponse> {
 export async function refresh(): Promise<{ access_token: string }> {
   const res = await authApi.post<{ access_token: string }>("/refresh");
   return res.data;
+}
+
+export type UpdateMeInput = {
+  telefone?: string | null;
+  email?: string | null;
+  nome?: string | null;
+};
+
+export async function getMe() {
+  const res = await authApi.get("/me");
+  return res.data as {
+    user_id: number;
+    email: string;
+    nome: string;
+    tipo: string;
+    ativo: boolean;
+    telefone?: string | null;
+  };
+}
+
+export async function updateMe(data: UpdateMeInput) {
+  const res = await authApi.put("/users/me", data);
+  return res.data as {
+    user_id: number;
+    email: string;
+    nome: string;
+    tipo: string;
+    ativo: boolean;
+    telefone?: string | null;
+  };
+}
+
+export async function changePassword(payload: {
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+}) {
+  const res = await authApi.post("/users/me/change-password", payload);
+  return res.data as { status: string };
 }

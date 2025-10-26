@@ -133,3 +133,62 @@ class UserService:
             **tokens
         }
     
+    def get_user_by_id(self, user_id: int) -> Optional[Usuario]:
+        """
+        Get user by ID
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            User instance or None if not found
+        """
+        return self.user_repo.get_by_id(user_id)
+
+    def update_user(self, user_id: int, telefone: Optional[str] = None, email: Optional[str] = None, nome: Optional[str] = None) -> Usuario:
+        """Atualiza dados simples do usuário (ex.: telefone, email, nome)."""
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+
+        update_data = {}
+        if telefone is not None:
+            update_data["telefone"] = telefone
+        if email is not None:
+            new_email = email.strip().lower()
+            if new_email != user.email:
+                # verifica duplicidade
+                if self.user_repo.email_exists(new_email):
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email já cadastrado")
+                update_data["email"] = new_email
+        if nome is not None:
+            new_name = nome.strip()
+            if len(new_name) < 2:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nome deve ter pelo menos 2 caracteres")
+            update_data["nome"] = new_name
+        if not update_data:
+            return user
+        updated = self.user_repo.update(user_id, update_data)
+        if not updated:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+        return updated
+
+    def change_password(self, user_id: int, current_password: str, new_password: str, new_password_confirmation: str) -> None:
+        """Troca a senha do usuário com verificação da senha atual."""
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+
+        # Verifica senha atual
+        if not self.password_service.verify_password(current_password, user.senha_hash):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha atual incorreta")
+
+        if new_password != new_password_confirmation:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="As senhas não coincidem")
+
+        if not self.password_service.is_password_strong(new_password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Senha não atende aos requisitos de segurança")
+
+        user.senha_hash = self.password_service.hash_password(new_password)
+        self.user_repo.db.commit()
+    

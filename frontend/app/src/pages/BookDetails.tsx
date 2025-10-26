@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { listBooks } from "../services/api";
+import { listBooks, getBook, getPublicSettings } from "../services/api";
 import type { Book } from "../types/book";
 import { useCart } from "../context/CartContext";
 import { useFavorites } from "../context/FavoritesContext";
@@ -9,70 +9,86 @@ import BookCard from "../components/book/BookCard";
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
 
-const CAT_LS_KEY = "publicEnabledCategories";
-
 export default function BookDetails() {
   const { id } = useParams<{ id: string }>();
   const [books, setBooks] = useState<Book[]>([]);
-  const [enabledCategories, setEnabledCategories] = useState<string[]>([]);
+  // null => não configurado (mostrar todas). [] => ocultar todas
+  const [enabledCategories, setEnabledCategories] = useState<string[] | null>(null);
+  const [book, setBook] = useState<Book | undefined>(undefined);
   const { add } = useCart();
   const { ids: favIds, toggle } = useFavorites();
 
-  // Load enabled categories from localStorage
+  // Load public settings and the current book
   useEffect(() => {
-    const loadCategories = () => {
-      try {
-        const raw = localStorage.getItem(CAT_LS_KEY);
-        if (raw) {
-          const arr = JSON.parse(raw) as string[];
-          setEnabledCategories(arr);
-        } else {
-          setEnabledCategories([]);
-        }
-      } catch {
-        setEnabledCategories([]);
-      }
-    };
-
-    loadCategories();
-
-    // Listen for storage changes
-    window.addEventListener('storage', loadCategories);
-    window.addEventListener('categoriesUpdated', loadCategories);
-
-    return () => {
-      window.removeEventListener('storage', loadCategories);
-      window.removeEventListener('categoriesUpdated', loadCategories);
-    };
+    getPublicSettings()
+      .then((s) => setEnabledCategories(s.enabledCategories ?? null))
+      .catch(() => setEnabledCategories(null));
   }, []);
 
   useEffect(() => {
+    if (!id) return;
+    getBook(id).then(setBook);
+    // Also fetch a list for recommendations
     listBooks().then(setBooks);
-  }, []);
+  }, [id]);
 
-  // Filter books by enabled categories
-  const filteredBooks = useMemo(() => {
-    // Convert enabled categories to lowercase for comparison
-    const enabledLower = enabledCategories.map(c => c.toLowerCase());
-    
-    return books.filter((b) => {
-      if (!b.category) return false;
-      // Compare case-insensitive
-      return enabledLower.includes(b.category.toLowerCase());
-    });
-  }, [books, enabledCategories]);
+  // Apply public category visibility rules
+  const allowed = useMemo(() => {
+    if (!book) return false;
+    if (enabledCategories === null) return true; // not configured => show
+    const enabledLower = enabledCategories.map((c) => c.toLowerCase());
+    const cat = (book.category || "").toLowerCase();
+    return enabledLower.includes(cat);
+  }, [book, enabledCategories]);
 
-  const book = useMemo(
-    () => filteredBooks.find((b) => b.id === id || (b as any).slug === id),
-    [filteredBooks, id]
-  );
+  const recommended = useMemo(() => {
+    const enabledLower = (enabledCategories ?? []).map((c) => c.toLowerCase());
+    const visible = enabledCategories === null
+      ? books
+      : books.filter((b) => b.category && enabledLower.includes(b.category.toLowerCase()));
+    return visible.filter((b) => b.id !== book?.id).slice(0, 4);
+  }, [books, book?.id, enabledCategories]);
 
-  const recommended = useMemo(
-    () => filteredBooks.filter((b) => b.id !== book?.id).slice(0, 4),
-    [filteredBooks, book?.id]
-  );
+  // Helpers to render category label and memoized text must be declared before any early returns
+  function humanizeCategory(cat?: string): string {
+    if (!cat) return "";
+    const map: Record<string, string> = {
+      FICCAO: "Ficção",
+      NAO_FICCAO: "Não ficção",
+      TECNICO: "Técnico",
+      ACADEMICO: "Acadêmico",
+      INFANTIL: "Infantil",
+      OUTROS: "Outros",
+      // Possíveis formatos do backend
+      ficcao: "Ficção",
+      nao_ficcao: "Não ficção",
+      tecnico: "Técnico",
+      academico: "Acadêmico",
+      infantil: "Infantil",
+      outros: "Outros",
+    };
+    const direct = map[cat as keyof typeof map] || map[cat.toUpperCase()] || map[cat.toLowerCase()];
+    if (direct) return direct;
+    // Fallback: "NAO_FICCAO" -> "Nao Ficcao"
+    return cat
+      .replace(/[_-]+/g, " ")
+      .toLowerCase()
+      .replace(/(^|\s)\p{L}/gu, (m) => m.toUpperCase());
+  }
 
-  if (!book) {
+  const categoriesText = useMemo(() => {
+    if (!book) return "—";
+    // Se vier um array (futuro), exibe lista
+    const list = (book as any)?.categories as string[] | undefined;
+    if (Array.isArray(list) && list.length) {
+      return list.map((c) => humanizeCategory(c)).join(" · ");
+    }
+    // Caso contrário, usa o campo único
+    const single = humanizeCategory(book.category);
+    return single || "—";
+  }, [book]);
+
+  if (!book || !allowed) {
     return (
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-xl font-semibold">Livro não encontrado</h1>
@@ -86,12 +102,9 @@ export default function BookDetails() {
     );
   }
 
-  const categoriesText =
-    Array.isArray((book as any).categories) && (book as any).categories.length
-      ? (book as any).categories.join(" · ")
-      : "—";
-
   const isFav = favIds.includes(book.id);
+
+  
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

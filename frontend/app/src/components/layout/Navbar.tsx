@@ -50,9 +50,11 @@ export default function Navbar() {
         <div className="flex-1" />
 
         {/* Favoritos */}
-        <IconButton title="Favoritos">
-          <span>♥</span>
-        </IconButton>
+        <Link to="/favorites" aria-label="Favoritos">
+          <IconButton title="Favoritos">
+            <span>♥</span>
+          </IconButton>
+        </Link>
 
         {/* Carrinho */}
         <Link

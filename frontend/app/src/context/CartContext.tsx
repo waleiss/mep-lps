@@ -6,7 +6,9 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 interface CartCtx {
   items: CartItem[];
   add: (b: Book) => void;
-  remove: (id: string) => void;
+  remove: (id: string) => void; // remove tudo do item
+  inc: (id: string) => void;    // +1
+  dec: (id: string) => void;    // -1 (remove se chegar a 0)
   clear: () => void;
   subtotal: number;
   shipping: number;
@@ -35,6 +37,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const remove = (id: string) =>
     setItems((prev) => prev.filter((it) => it.book.id !== id));
+
+  const inc = (id: string) =>
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.book.id === id);
+      if (idx < 0) return prev;
+      const cp = [...prev];
+      cp[idx] = { ...cp[idx], qty: cp[idx].qty + 1 };
+      return cp;
+    });
+
+  const dec = (id: string) =>
+    setItems((prev) => {
+      const idx = prev.findIndex((it) => it.book.id === id);
+      if (idx < 0) return prev;
+      const item = prev[idx];
+      if (item.qty <= 1) {
+        return prev.filter((it) => it.book.id !== id);
+      }
+      const cp = [...prev];
+      cp[idx] = { ...cp[idx], qty: cp[idx].qty - 1 };
+      return cp;
+    });
   const clear = () => setItems([]);
 
   const subtotal = useMemo(
@@ -54,7 +78,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <Ctx.Provider
-      value={{ items, add, remove, clear, subtotal, shipping, total, count }}
+      value={{ items, add, remove, inc, dec, clear, subtotal, shipping, total, count }}
     >
       {children}
     </Ctx.Provider>

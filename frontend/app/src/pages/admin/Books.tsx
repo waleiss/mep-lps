@@ -174,6 +174,11 @@ export default function Books() {
   function savePublicEnabled(next: Categoria[]) {
     setPublicEnabled(next);
     localStorage.setItem(LS_KEY, JSON.stringify(next));
+    // Notifica outras abas/janelas e também a própria aba
+    try {
+      // storage event dispara em outras abas; este custom event cobre a mesma aba
+      window.dispatchEvent(new Event('categoriesUpdated'));
+    } catch {}
     setVisModalOpen(false);
   }
 

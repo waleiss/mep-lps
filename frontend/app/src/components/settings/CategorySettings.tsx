@@ -1,32 +1,32 @@
 import { useEffect, useState } from "react";
 import { ALL_CATEGORIES, type Categoria } from "../../mocks/info-admin";
-
-const CAT_LS_KEY = "publicEnabledCategories";
+import { getPublicSettings, updatePublicSettings } from "../../services/api";
 
 export default function CategorySettings() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [enabled, setEnabled] = useState<Categoria[]>([]);
+  // null => não configurado (mostrar todas). [] => ocultar todas.
+  const [enabled, setEnabled] = useState<Categoria[] | null>(null);
   const [showSavedMessage, setShowSavedMessage] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CAT_LS_KEY);
-      if (raw) {
-        const arr = JSON.parse(raw) as Categoria[];
-        const sanitized = arr.filter((c) => ALL_CATEGORIES.includes(c));
-        setEnabled(sanitized);
-      } else {
-        // Start with empty array (no categories enabled by default)
-        setEnabled([]);
-      }
-    } catch {
-      setEnabled([]);
-    }
+    getPublicSettings()
+      .then((data) => {
+        const cats = data.enabledCategories as Categoria[] | null | undefined;
+        if (cats == null) {
+          setEnabled(null); // não configurado => todas
+        } else {
+          const sanitized = cats.filter((c) => ALL_CATEGORIES.includes(c));
+          setEnabled(sanitized);
+        }
+      })
+      .catch(() => setEnabled(null));
   }, []);
 
   function save(next: Categoria[]) {
     setEnabled(next);
-    localStorage.setItem(CAT_LS_KEY, JSON.stringify(next));
+    // Persistir no backend: [] => ocultar todas, null => não configurado
+    updatePublicSettings({ enabledCategories: next })
+      .catch((e) => console.error("Falha ao salvar categorias públicas:", e));
     setModalOpen(false);
     
     // Show saved message
@@ -38,7 +38,7 @@ export default function CategorySettings() {
   }
 
   return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm">
+  <div className="rounded-2xl border bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-800">
           Categorias Públicas
@@ -53,12 +53,16 @@ export default function CategorySettings() {
 
       {showSavedMessage && (
         <div className="mb-3 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800">
-          ✓ Configurações salvas! {enabled.length === 0 ? "Todas as categorias serão exibidas." : `${enabled.length} categoria(s) habilitada(s).`}
+          ✓ Configurações salvas! {enabled === null
+            ? "Todas as categorias serão exibidas."
+            : enabled.length === 0
+              ? "Nenhuma categoria será exibida."
+              : `${enabled.length} categoria(s) habilitada(s).`}
         </div>
       )}
 
       <div className="flex flex-wrap gap-2">
-        {enabled.length > 0 ? (
+        {enabled !== null && enabled.length > 0 ? (
           enabled.map((c) => (
             <span
               key={c}
@@ -69,7 +73,9 @@ export default function CategorySettings() {
           ))
         ) : (
           <span className="text-sm text-slate-500 italic">
-            Nenhuma categoria selecionada - todas serão exibidas no site
+            {enabled === null
+              ? "Nenhuma categoria selecionada - todas serão exibidas no site"
+              : "Nenhuma categoria selecionada - nenhuma será exibida"}
           </span>
         )}
       </div>
@@ -78,7 +84,7 @@ export default function CategorySettings() {
         <Modal
           title="Selecionar categorias públicas"
           options={ALL_CATEGORIES}
-          selected={enabled}
+          selected={enabled ?? []}
           onClose={() => setModalOpen(false)}
           onSave={save}
         />
