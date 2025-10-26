@@ -12,7 +12,9 @@ from schemas.auth_schemas import (
     UserRegisterRequest,
     LoginResponse,
     RegisterResponse,
-    UserResponse
+    UserResponse,
+    UpdateUserRequest,
+    ChangePasswordRequest
 )
 from models import Usuario
 
@@ -99,5 +101,85 @@ async def get_current_user_info(
         "email": current_user.email,
         "nome": current_user.nome,
         "tipo": current_user.tipo.value if current_user.tipo else None,
-        "ativo": current_user.ativo
+        "ativo": current_user.ativo,
+        "telefone": current_user.telefone
     }
+
+
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user_by_id(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para obter dados de um usuário por ID
+    (Usado internamente pelos outros microserviços)
+    """
+    user_service = UserService(db)
+    
+    try:
+        user = user_service.get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Usuário {user_id} não encontrado"
+            )
+        
+        return {
+            "user_id": user.id,
+            "email": user.email,
+            "nome": user.nome,
+            "tipo": user.tipo.value if user.tipo else None,
+            "ativo": user.ativo,
+            "telefone": user.telefone
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal server error"
+        )
+
+
+@router.put("/users/me", response_model=UserResponse)
+async def update_current_user(
+    update: UpdateUserRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """Atualiza dados do usuário atual (ex.: telefone)."""
+    service = UserService(db)
+    user = service.update_user(
+        current_user.id,
+        telefone=update.telefone,
+        email=update.email,
+        nome=update.nome,
+    )
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "nome": user.nome,
+        "tipo": user.tipo.value if user.tipo else None,
+        "ativo": user.ativo,
+        "telefone": user.telefone,
+    }
+
+
+@router.post("/users/me/change-password")
+async def change_password(
+    payload: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """Troca a senha do usuário atual."""
+    service = UserService(db)
+    service.change_password(
+        user_id=current_user.id,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+        new_password_confirmation=payload.new_password_confirmation,
+    )
+    return {"status": "ok"}

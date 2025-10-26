@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { listBooks } from "../services/api";
+import { listBooks, getPublicSettings } from "../services/api";
 import type { Book } from "../types/book";
 
 import BookCard from "../components/book/BookCard";
@@ -11,63 +11,43 @@ import { RatingStars } from "../components/book/RatingStars";
 const money = (v: number) =>
   v.toLocaleString(undefined, { style: "currency", currency: "BRL" });
 
-const CAT_LS_KEY = "publicEnabledCategories";
+// Configuração pública: categorias habilitadas
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
   const [query, setQuery] = useState("");
   const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [enabledCategories, setEnabledCategories] = useState<string[]>([]);
+  // null => não configurado (mostrar todas). [] => ocultar todas.
+  const [enabledCategories, setEnabledCategories] = useState<string[] | null>(null);
 
-  // Load enabled categories from localStorage
+  // Load enabled categories from the backend public settings
   useEffect(() => {
-    const loadCategories = () => {
-      try {
-        const raw = localStorage.getItem(CAT_LS_KEY);
-        if (raw) {
-          const arr = JSON.parse(raw) as string[];
-          setEnabledCategories(arr);
-        } else {
-          // If no config, show all categories
-          setEnabledCategories([]);
-        }
-      } catch {
-        setEnabledCategories([]);
-      }
-    };
-
-    loadCategories();
-
-    // Listen for storage changes (when admin updates settings)
-    window.addEventListener('storage', loadCategories);
-    
-    // Custom event for same-window updates
-    const handleCategoryChange = () => loadCategories();
-    window.addEventListener('categoriesUpdated', handleCategoryChange);
-
-    return () => {
-      window.removeEventListener('storage', loadCategories);
-      window.removeEventListener('categoriesUpdated', handleCategoryChange);
-    };
+    getPublicSettings()
+      .then((s) => setEnabledCategories(s.enabledCategories ?? null))
+      .catch(() => setEnabledCategories(null));
   }, []);
 
   const filtered = useMemo(() => {
     let result = books;
 
     // Convert enabled categories to lowercase for comparison
-    const enabledLower = enabledCategories.map(c => c.toLowerCase());
-    
-    // Filter by enabled categories
-    result = result.filter((b) => {
-      if (!b.category) return false;
-      // Compare case-insensitive
-      return enabledLower.includes(b.category.toLowerCase());
-    });
+    const enabledLower = (enabledCategories ?? []).map((c) => c.toLowerCase());
+
+    // Behavior:
+    // - null => not configured => show all categories
+    // - [] => configured empty => show none
+    if (enabledCategories !== null) {
+      result = result.filter((b) => {
+        if (!b.category) return false;
+        // Compare case-insensitive
+        return enabledLower.includes(b.category.toLowerCase());
+      });
+    }
 
     // Filter by search query
     const q = query.trim().toLowerCase();
     if (q) {
-      result = result.filter((b) => 
+      result = result.filter((b) =>
         `${b.title} ${b.author}`.toLowerCase().includes(q)
       );
     }

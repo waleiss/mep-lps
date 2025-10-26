@@ -1,0 +1,15 @@
+{
+  "enabledPayments": [
+    "card",
+    "pix",
+    "boleto"
+  ],
+  "enabledCategories": [
+    "INFANTIL",
+    "FICCAO",
+    "TECNICO",
+    "ACADEMICO",
+    "OUTROS",
+    "NAO_FICCAO"
+  ]
+}

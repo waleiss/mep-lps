@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { getOrders, type Order } from "../../services/ordersApi";
+import { getOrders, updateOrderStatus, getOrder, type Order } from "../../services/ordersApi";
 
 type OrderStatus = "PENDENTE" | "PROCESSANDO" | "PAGO" | "ENVIADO" | "ENTREGUE" | "CANCELADO";
 
@@ -9,6 +9,7 @@ export default function Orders() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"" | OrderStatus>("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -26,15 +27,31 @@ export default function Orders() {
     }
   }
 
+  async function handleViewDetails(orderId: number) {
+    setLoadingDetails(true);
+    try {
+      const orderDetails = await getOrder(orderId);
+      if (orderDetails) {
+        setSelectedOrder(orderDetails);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar detalhes do pedido:", error);
+    } finally {
+      setLoadingDetails(false);
+    }
+  }
+
   function mapStatus(st: string): string {
     const statusMap: Record<string, string> = {
       pending: "PENDENTE",
       processing: "PROCESSANDO",
+      confirmado: "CONFIRMADO",
       paid: "PAGO",
       shipped: "ENVIADO",
       delivered: "ENTREGUE",
       cancelled: "CANCELADO",
       cancelado: "CANCELADO",
+      devolvido: "DEVOLVIDO",
     };
     return statusMap[st.toLowerCase()] || st.toUpperCase();
   }
@@ -45,6 +62,8 @@ export default function Orders() {
       case "PAGO":
       case "ENTREGUE":
         return "bg-green-100 text-green-800";
+      case "CONFIRMADO":
+        return "bg-blue-100 text-blue-800";
       case "ENVIADO":
         return "bg-blue-100 text-blue-800";
       case "PROCESSANDO":
@@ -53,6 +72,8 @@ export default function Orders() {
         return "bg-orange-100 text-orange-800";
       case "CANCELADO":
         return "bg-red-100 text-red-800";
+      case "DEVOLVIDO":
+        return "bg-slate-100 text-slate-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -99,12 +120,14 @@ export default function Orders() {
           className="px-3 py-2 border rounded-lg"
         >
           <option value="">Todos</option>
+          <option value="CONFIRMADO">CONFIRMADO</option>
           <option value="PENDENTE">PENDENTE</option>
           <option value="PROCESSANDO">PROCESSANDO</option>
           <option value="PAGO">PAGO</option>
           <option value="ENVIADO">ENVIADO</option>
           <option value="ENTREGUE">ENTREGUE</option>
           <option value="CANCELADO">CANCELADO</option>
+          <option value="DEVOLVIDO">DEVOLVIDO</option>
         </select>
       </div>
 
@@ -150,10 +173,11 @@ export default function Orders() {
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => setSelectedOrder(p)}
-                      className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      onClick={() => handleViewDetails(p.id)}
+                      disabled={loadingDetails}
+                      className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Ver Detalhes
+                      {loadingDetails ? "Carregando..." : "Ver Detalhes"}
                     </button>
                   </td>
                 </tr>
@@ -167,13 +191,51 @@ export default function Orders() {
         <OrderDetailsModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
+          onUpdated={(updated) => {
+            // Atualiza lista e o modal
+            setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+            setSelectedOrder(updated);
+          }}
         />
       )}
     </div>
   );
 }
 
-function OrderDetailsModal({ order, onClose }: { order: Order; onClose: () => void }) {
+function OrderDetailsModal({ order, onClose, onUpdated }: { order: Order; onClose: () => void; onUpdated: (o: Order) => void }) {
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [confirmData, setConfirmData] = useState<null | { status: string; label: string }>(null);
+
+  function statusLabel(st: string) {
+    const map: Record<string, string> = {
+      confirmado: 'Confirmar',
+      processando: 'Processando',
+      enviado: 'Enviar',
+      entregue: 'Concluir (Entregue)',
+      cancelado: 'Cancelar',
+      devolvido: 'Devolver',
+    };
+    return map[st] || st;
+  }
+
+  function askChange(status: string) {
+    setConfirmData({ status, label: statusLabel(status) });
+  }
+
+  async function confirmChange() {
+    if (!confirmData) return;
+    const status = confirmData.status;
+    setUpdating(status);
+    try {
+      const updated = await updateOrderStatus(order.id, status);
+      onUpdated(updated);
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || `Não foi possível atualizar para '${status}'.`);
+    } finally {
+      setUpdating(null);
+      setConfirmData(null);
+    }
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -189,6 +251,97 @@ function OrderDetailsModal({ order, onClose }: { order: Order; onClose: () => vo
           </button>
         </div>
 
+        {/* Ações rápidas de status */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(() => {
+            const terminal = ['entregue','cancelado','devolvido'];
+            const isTerminal = terminal.includes((order.status || '').toLowerCase());
+            const disabledFor = (target: string) => updating !== null || isTerminal || !!confirmData || (order.status || '').toLowerCase() === target;
+
+            return (
+              <>
+                <button
+                  onClick={() => askChange('confirmado')}
+                  disabled={disabledFor('confirmado')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('confirmado') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-blue-600 hover:bg-blue-700'}`}
+                >
+                  {updating === 'confirmado' ? 'Confirmando...' : 'Confirmar'}
+                </button>
+
+                <button
+                  onClick={() => askChange('processando')}
+                  disabled={disabledFor('processando')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('processando') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-yellow-600 hover:bg-yellow-700'}`}
+                >
+                  {updating === 'processando' ? 'Atualizando...' : 'Processando'}
+                </button>
+
+                <button
+                  onClick={() => askChange('enviado')}
+                  disabled={disabledFor('enviado')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('enviado') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                >
+                  {updating === 'enviado' ? 'Enviando...' : 'Enviar'}
+                </button>
+
+                <button
+                  onClick={() => askChange('entregue')}
+                  disabled={disabledFor('entregue')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('entregue') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-green-600 hover:bg-green-700'}`}
+                >
+                  {updating === 'entregue' ? 'Concluindo...' : 'Concluir (Entregue)'}
+                </button>
+
+                <button
+                  onClick={() => askChange('cancelado')}
+                  disabled={disabledFor('cancelado')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('cancelado') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-rose-600 hover:bg-rose-700'}`}
+                >
+                  {updating === 'cancelado' ? 'Cancelando...' : 'Cancelar'}
+                </button>
+
+                <button
+                  onClick={() => askChange('devolvido')}
+                  disabled={disabledFor('devolvido')}
+                  className={`px-3 py-1.5 text-sm rounded text-white ${disabledFor('devolvido') ? 'bg-slate-400 cursor-not-allowed opacity-60' : 'bg-slate-600 hover:bg-slate-700'}`}
+                >
+                  {updating === 'devolvido' ? 'Devolvendo...' : 'Devolver'}
+                </button>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* Modal de confirmação estilizado */}
+        {confirmData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md bg-white rounded-xl shadow-xl border">
+              <div className="px-5 py-4 border-b">
+                <h4 className="text-lg font-semibold text-slate-800">Confirmar ação</h4>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-slate-700">Deseja confirmar a ação: <span className="font-medium">{confirmData.label}</span>?</p>
+              </div>
+              <div className="px-5 py-3 border-t flex justify-end gap-2">
+                <button
+                  className="px-4 py-2 rounded-lg border hover:bg-slate-50"
+                  onClick={() => setConfirmData(null)}
+                  disabled={!!updating}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className={`px-4 py-2 rounded-lg text-white ${updating ? 'bg-slate-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  onClick={confirmChange}
+                  disabled={!!updating}
+                >
+                  {updating ? 'Aplicando...' : 'Confirmar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Informações do Cliente */}
           <div className="border rounded-lg p-4 bg-slate-50">
@@ -196,10 +349,29 @@ function OrderDetailsModal({ order, onClose }: { order: Order; onClose: () => vo
               <span className="text-lg">👤</span> Cliente
             </h3>
             <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-slate-500">ID do Usuário:</span>
-                <span className="ml-2 font-medium">{order.usuario_id}</span>
-              </div>
+              {order.usuario_info ? (
+                <>
+                  <div>
+                    <span className="text-slate-500">Nome:</span>
+                    <span className="ml-2 font-medium">{order.usuario_info.nome}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Email:</span>
+                    <span className="ml-2 font-medium">{order.usuario_info.email}</span>
+                  </div>
+                  {order.usuario_info.telefone && (
+                    <div>
+                      <span className="text-slate-500">Telefone:</span>
+                      <span className="ml-2 font-medium">{order.usuario_info.telefone}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  <span className="text-slate-500">ID do Usuário:</span>
+                  <span className="ml-2 font-medium">{order.usuario_id}</span>
+                </div>
+              )}
               <div>
                 <span className="text-slate-500">Data do Pedido:</span>
                 <span className="ml-2 font-medium">

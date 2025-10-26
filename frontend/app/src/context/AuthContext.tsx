@@ -15,6 +15,7 @@ import {
   type LoginResponse,
   type RegisterResponse,
 } from "../services/authApi";
+import { getMe } from "../services/authApi";
 
 export type AuthUser = {
   id: string;
@@ -22,6 +23,7 @@ export type AuthUser = {
   email: string;
   tipo?: string;
   ativo: boolean;
+  telefone?: string | null;
 };
 
 type AuthState = {
@@ -100,9 +102,25 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         email: res.email?.trim().toLowerCase(),
         tipo: res.tipo ?? undefined,
         ativo: res.ativo,
+        telefone: (res as any).telefone ?? null,
       };
 
+      // Primeiro persiste para habilitar o header Authorization
       persist(mappedUser, res.access_token);
+
+      // Busca dados atualizados (inclui telefone) e atualiza o cache
+      try {
+        const me = await getMe();
+        const withDetails: AuthUser = {
+          id: String(me.user_id),
+          name: me.nome,
+          email: me.email?.trim().toLowerCase(),
+          tipo: me.tipo ?? undefined,
+          ativo: me.ativo,
+          telefone: me.telefone ?? null,
+        };
+        persist(withDetails, res.access_token);
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -124,9 +142,25 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         email: res.email?.trim().toLowerCase(),
         tipo: res.tipo ?? undefined,
         ativo: res.ativo,
+        telefone: (res as any).telefone ?? null,
       };
 
+      // Persiste token e dados mínimos
       persist(mappedUser, res.access_token);
+
+      // Em seguida, sincroniza dados completos do /me
+      try {
+        const me = await getMe();
+        const withDetails: AuthUser = {
+          id: String(me.user_id),
+          name: me.nome,
+          email: me.email?.trim().toLowerCase(),
+          tipo: me.tipo ?? undefined,
+          ativo: me.ativo,
+          telefone: me.telefone ?? null,
+        };
+        persist(withDetails, res.access_token);
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -151,6 +185,28 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
   //   tryRefresh();
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, []);
+
+  // Sincroniza dados do usuário (ex.: telefone) na inicialização se faltar algo
+  React.useEffect(() => {
+    const syncUser = async () => {
+      if (!token || !user) return;
+      if (user.telefone !== undefined && user.telefone !== null && user.telefone !== "") return;
+      try {
+        const me = await getMe();
+        const withDetails: AuthUser = {
+          id: String(me.user_id),
+          name: me.nome,
+          email: me.email?.trim().toLowerCase(),
+          tipo: me.tipo ?? undefined,
+          ativo: me.ativo,
+          telefone: me.telefone ?? null,
+        };
+        persist(withDetails, token);
+      } catch {}
+    };
+    syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // derivados
   const isAuthenticated = !!token && !!user;
